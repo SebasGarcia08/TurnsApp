@@ -101,9 +101,7 @@ public class User {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
-		// TODO Auto-generated method stub
-		return super.equals(obj);
+	public boolean equals(Object o) {
+		return ( ((User) o).getId() == this.id );
 	}
-
 }

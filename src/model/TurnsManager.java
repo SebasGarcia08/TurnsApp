@@ -10,12 +10,12 @@ public class TurnsManager {
 
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
-	public Turn currentTurn;
+	public Turn lastTurn;
 
 	public TurnsManager() {
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.currentTurn = new Turn("A00");
+		this.lastTurn = new Turn("A00");
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class TurnsManager {
 		if (usr.getTurn() != null)
 			throw new UserAlreadyHasATurnException(usr);
 		else {
-			Turn turn = new Turn(generateNextTurnId(currentTurn));
+			Turn turn = new Turn(generateNextTurnId(lastTurn));
 			usr.setTurn(turn);
 			turns.add(turn);
 		}
@@ -81,13 +81,13 @@ public class TurnsManager {
 	public Turn searchTurn(String turnId)  throws UserNotFoundException {
 		return turns.stream().filter(turn -> turn.getId().contentEquals(turnId)).findFirst().get();
 	}
-	
+		
 	/**
 	 * 
 	 * @param turn
 	 */
-	public void dispatchTurn(String turnId) {
-		searchTurn(turnId).setState(Turn.ATTENDED);
+	public void dispatchTurn(String turnId, String state) {
+		searchTurn(turnId).setState(state);
 	}
 
 	public ArrayList<User> getUsers() {
@@ -102,6 +102,10 @@ public class TurnsManager {
 		this.users = users;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public ArrayList<Turn> getTurns() {
 		return this.turns;
 	}
@@ -114,12 +118,12 @@ public class TurnsManager {
 		this.turns = turns;
 	}
 
-	public Turn getCurrentTurn() {
-		return currentTurn;
-	}
-
+	/**
+	 * 
+	 * @param currentTurn
+	 */
 	public void setCurrentTurn(Turn currentTurn) {
-		this.currentTurn = currentTurn;
+		this.lastTurn = currentTurn;
 	}
 
 }

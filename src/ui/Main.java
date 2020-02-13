@@ -50,7 +50,7 @@ public class Main {
 				break;
 
 			case 2:
-				print("The next available turn is " + manager.generateNextTurnId(manager.currentTurn)
+				print("The next available turn is " + manager.generateNextTurnId(manager.lastTurn)
 						+ ". Do you want to assign it to some user? [y/n]: ");
 				String y_n = String.valueOf(sc.nextLine().charAt(0));
 				if (y_n.equalsIgnoreCase("n")) { println("Ok, returning to menu..."); } 
@@ -66,7 +66,7 @@ public class Main {
 					println("Invalid choice. Possible answers are 'y' (yes) or 'n' (no)");
 				break;
 			case 3:
-				println("Current turn: ");
+				println("");
 				break;
 			case 4:
 				println("Goodbye!");

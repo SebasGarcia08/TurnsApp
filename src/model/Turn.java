@@ -39,6 +39,11 @@ public class Turn {
 	public String toString() {
 		return "Turn [state=" + state + ", id=" + id + "]";
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return ( ((Turn) o).getId() == this.id );
+	}
 
 	public String getState() {
 		return state;
