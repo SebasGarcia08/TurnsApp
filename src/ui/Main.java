@@ -1,7 +1,16 @@
 package ui;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.InputMismatchException;
+import java.util.NoSuchElementException;
+
 import model.*;
-import java.util.Scanner;
+
+//import java.util.InputMismatchException;
+//import java.util.Scanner;
 
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
@@ -13,52 +22,65 @@ public class Main {
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		TurnsManager manager = new TurnsManager();
-		@SuppressWarnings("resource")
-		Scanner sc = new Scanner(System.in);
+		BufferedReader sc = new BufferedReader(new InputStreamReader(System.in));
 
 		int election = 0;
-		String OPCIONES = "\n1). Add user.\n2). Register turn.\n3). Atender";
+		String OPCIONES = "\n1). Add user.\n2). Register turn.\n3). Attend\n4) Exit";
 		while (election != 4) {
-			print("======== MENU ========\n" + OPCIONES + "\nAnswer: ");
-			election = sc.nextInt();
+			print("\n======== MENU ========" + OPCIONES + "\nAnswer: ");
+			election = Integer.parseInt(sc.readLine());
 			switch (election) {
 			case 1:
-				println("Please fill-in the following fields (required ones are marked with *)");
-
-				println("Name *: ");
-				String n = sc.nextLine();
-
-				println("Type of document *: ");
-				String tod = sc.nextLine();
-
-				println("Document number *: ");
-				String id = sc.nextLine();
-
-				println("Cellphone number *: ");
-				String cpn = sc.nextLine();
-
-				println("Address *: ");
-				String a = sc.nextLine();
-
 				try {
+					String n, tod, id, cpn, a;
+					println("Please fill-in the following fields (required ones are marked with *)");
+
+					print("Name *: ");
+					n = sc.readLine();
+
+					println("Type of document *:");
+					
+					for(int i = 0; i < User.TYPES_OF_DOCUMENTS.length; i++)
+						println("	" + (i+1) + "). " + User.TYPES_OF_DOCUMENTS[i]);
+					print("        Answer [1-5]: ");
+					try {
+						tod = User.TYPES_OF_DOCUMENTS[Integer.parseInt(sc.readLine())-1];
+					}catch(IndexOutOfBoundsException e) {
+						println("Invalid choice");
+						break;
+					}
+
+					print("Document number *: ");
+					id = sc.readLine();
+
+					print("Cellphone number: ");
+					cpn = sc.readLine();
+
+					print("Address: ");
+					a = sc.readLine();
+
 					manager.addUser(n, id, tod, cpn, a, null);
-				} catch (UserAlreadyRegisteredException | BlankRequiredFieldException e) {
+					println("User addesd succesfully.");
+
+				} catch(UserAlreadyRegisteredException | BlankRequiredFieldException | NumberFormatException e) {
 					println(e.getMessage());
+					break;
 				}
 				break;
 
 			case 2:
 				print("The next available turn is " + manager.generateNextTurnId(manager.lastTurn)
 						+ ". Do you want to assign it to some user? [y/n]: ");
-				String y_n = String.valueOf(sc.nextLine().charAt(0));
+				String y_n = String.valueOf(sc.readLine().charAt(0));
 				if (y_n.equalsIgnoreCase("n")) { println("Ok, returning to menu..."); } 
 				else if (y_n.equalsIgnoreCase("y")) {
 					print("Write the id of the user: ");
-					String id_ = sc.next();
+					String id_ = sc.readLine();
 					try {
 						manager.registerTurn(id_);
+						println("Turn registered succesfully.");
 					} catch (UserAlreadyHasATurnException | UserNotFoundException e) {
 						println(e.getMessage());
 					}
@@ -66,10 +88,34 @@ public class Main {
 					println("Invalid choice. Possible answers are 'y' (yes) or 'n' (no)");
 				break;
 			case 3:
-				println("");
+				try {
+					println("The current turn is " + manager.getCurrentTurn().getId());
+					print("Choose what to do with it: \n" + 
+						    "		1) Attend\n"+ 
+						    "       2) User not present\n"+
+						    "       3) Go back to main menu\n"+ 
+						    "Answer[1-3]: ");
+					int res = Integer.parseInt(sc.readLine());
+						switch (res) {
+						case 1:
+							manager.dispatchTurn(Turn.ATTENDED);
+							break;
+						case 2:
+							manager.dispatchTurn(Turn.USER_NOT_PRESENT);
+							break;
+						case 3:	
+							break;
+						default:
+							println("Invalid choice");
+							break;
+						}
+				} catch(NoSuchElementException e) {
+					println(e.getMessage());
+				}
 				break;
 			case 4:
 				println("Goodbye!");
+				sc.close();
 				break;
 			default:
 				println("Invalid choice.");

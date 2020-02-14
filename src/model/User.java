@@ -5,6 +5,15 @@ public class User {
 	private String name;
 	private String id;
 	private String typeOfDocument;
+	
+	public static final String CC = "citizenship card";
+	public static final String CE = "foreigner ID";
+	public static final String PA = "passport";
+	public static final String TI = "Identity card";
+	public static final String RC = "Civil register";
+	
+	public static final String[] TYPES_OF_DOCUMENTS = {CC, CE, PA, TI, RC};
+	
 	private String cellphoneNumber;
 	private String address;
 	private Turn turn;

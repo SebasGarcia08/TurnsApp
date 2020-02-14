@@ -2,7 +2,10 @@ package model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import CustomExceptions.*;
 
@@ -11,11 +14,12 @@ public class TurnsManager {
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
 	public Turn lastTurn;
+	public static final String[] REQUIRED_FIELDS = {"name", "document number", "type of document"};
 
 	public TurnsManager() {
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.lastTurn = new Turn("A00");
+		this.lastTurn = new Turn("A-1");
 	}
 
 	/**
@@ -27,15 +31,21 @@ public class TurnsManager {
 	 * @param a
 	 */
 	public void addUser(String n, String id, String tod, String cpn, String a, Turn t)
-			throws UserAlreadyRegisteredException, BlankRequiredFieldException {
+			throws UserAlreadyRegisteredException, BlankRequiredFieldException, NumberFormatException {
+		Map<String, String> requiredFields = new HashMap<String, String>();
+		String[] required_args = {n, id, tod};
 		
-		List<String> requiredFields = Arrays.asList(n, id, tod );
-		ArrayList<String> blankFields = requiredFields.stream()
-										.filter(s -> s.isBlank())
-										.collect(Collectors.toCollection(ArrayList::new));	
-
-		if (!blankFields.isEmpty()) throw new BlankRequiredFieldException(blankFields);
+		for(int i = 0; i < REQUIRED_FIELDS.length; i++)
+			requiredFields.put(REQUIRED_FIELDS[i], required_args[i]);
+		
+		ArrayList<String> blankFieldsList = requiredFields.entrySet().stream()
+										.filter(item -> item.getValue().isBlank())
+										.map(Map.Entry::getKey)
+										.collect(Collectors.toCollection(ArrayList::new));
 		if (searchUser(id) != null) throw new UserAlreadyRegisteredException(id);
+		if (!blankFieldsList.isEmpty()) throw new BlankRequiredFieldException(blankFieldsList);
+		if(!id.matches("\\d+")) throw new NumberFormatException("Invalid document number");
+		if(!cpn.isBlank() && !cpn.matches("\\d+")) throw new NumberFormatException("Invalid cellphone number");
 		users.add(new User(n, id, tod, cpn, a, t));
 	}
 
@@ -43,22 +53,48 @@ public class TurnsManager {
 	 * 
 	 * @param id
 	 */
-	public User searchUser(String id) throws UserNotFoundException {
-		return users.stream().filter(user -> user.getId().contentEquals(id)).findFirst().get();
+	public User searchUser(String id) {
+		User found = null;
+		for(User u : users) {
+			if(u.getId().equals(id)) {
+				found = u;
+				break;
+			}
+		}
+		return found;
+	}
+	
+	/**
+	 * 
+	 * @param id
+	 * @return
+	 */
+	public Turn searchTurn(String id) {
+		Turn found = null;
+		for(Turn u : turns) {
+			if(u.getId().equals(id)) {
+				found = u;
+				break;
+			}
+		}
+		return found;
 	}
 
 	/**
 	 * 
-	 * @param usr
+	 * @param id
+	 * @throws UserAlreadyHasATurnException
+	 * @throws UserNotFoundException
 	 */
 	public void registerTurn(String id) throws UserAlreadyHasATurnException, UserNotFoundException {
 		User usr = searchUser(id);
-		if (usr.getTurn() != null)
-			throw new UserAlreadyHasATurnException(usr);
+		if(usr == null) 				throw new UserNotFoundException(id);
+		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
 			Turn turn = new Turn(generateNextTurnId(lastTurn));
 			usr.setTurn(turn);
 			turns.add(turn);
+			lastTurn = new Turn(generateNextTurnId(lastTurn));
 		}
 	}
 
@@ -77,19 +113,24 @@ public class TurnsManager {
 		String nextTurnId = String.valueOf(nextTurnLetter) + String.valueOf(nextTurnNumber);
 		return nextTurnId;
 	}
-
-	public Turn searchTurn(String turnId)  throws UserNotFoundException {
-		return turns.stream().filter(turn -> turn.getId().contentEquals(turnId)).findFirst().get();
-	}
-		
+	
 	/**
 	 * 
 	 * @param turn
 	 */
-	public void dispatchTurn(String turnId, String state) {
-		searchTurn(turnId).setState(state);
+	public void dispatchTurn(String state) throws NoSuchElementException {
+		Turn currTurn = getCurrentTurn();
+		currTurn.setState(state);
 	}
-
+	
+	public Turn getCurrentTurn() throws NoSuchElementException {
+		Turn curr_turn;
+		try {
+			curr_turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD)).findFirst().get();
+		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no turns registered yet."); }
+		return curr_turn;
+	}
+	
 	public ArrayList<User> getUsers() {
 		return this.users;
 	}

@@ -2,8 +2,8 @@ package model;
 
 public class Turn {
 
-	public static final String USER_NOT_PRESENT = "user not present";
-	public static final String ATTENDED = "attended";
+	public static final String USER_NOT_PRESENT = "User not present";
+	public static final String ATTENDED = "Attended";
 	public static final String ON_HOLD = "On hold...";
 	private String state;
 	private String id;
@@ -40,11 +40,6 @@ public class Turn {
 		return "Turn [state=" + state + ", id=" + id + "]";
 	}
 	
-	@Override
-	public boolean equals(Object o) {
-		return ( ((Turn) o).getId() == this.id );
-	}
-
 	public String getState() {
 		return state;
 	}
