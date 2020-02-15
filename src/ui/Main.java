@@ -11,7 +11,7 @@ import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
 import CustomExceptions.UserNotFoundException;
-import CustomExceptions.InvalidFormatException;;
+import CustomExceptions.InvalidInputException;;
 
 public class Main {
 	/**
@@ -62,7 +62,7 @@ public class Main {
 					try {
 						manager.addUser(n, id, tod, cpn, a, null);
 						println("User addesd succesfully.");
-					} catch(UserAlreadyRegisteredException | BlankRequiredFieldException | InvalidFormatException e) {
+					} catch(UserAlreadyRegisteredException | BlankRequiredFieldException | InvalidInputException e) {
 						println(e.getMessage());
 						break;
 					}
