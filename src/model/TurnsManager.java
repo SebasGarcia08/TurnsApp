@@ -70,6 +70,7 @@ public class TurnsManager {
 	 * @param cpn, String cell-phone number. Must be numerical.
 	 * @param a, String, address. Optional field.
 	 * @param t, Turn, turn assigned to user. Initially is null.
+	 * <b>All parameters (n, id, cpn, a, t) are not null. <b>
 	 * <b>post:</b> User was added successfully if all required fields were not blank, all fields were in their corresponding format, and its id was unique. Otherwise, the corresponding exception was thrown.    
 	 * @throws UserAlreadyRegisteredException if another user with same id is found.
 	 * @throws BlankRequiredFieldException if one of the REQUIRED FIELDS indicated is blank. 
@@ -102,10 +103,12 @@ public class TurnsManager {
 	 */
 	public User searchUser(String id) {
 		User found = null;
-		for(User u : users) {
-			if(u.getId().equals(id)) {
-				found = u;
-				break;
+		boolean wasFound = false;
+		for(int i=0; i < users.size() && !wasFound; i++) {
+			User turn_i = users.get(i);
+			if(turn_i.getId().equalsIgnoreCase(id)) {
+				found = turn_i;
+				wasFound = true;
 			}
 		}
 		return found;
@@ -118,20 +121,24 @@ public class TurnsManager {
 	 */
 	public Turn searchTurn(String id) {
 		Turn found = null;
-		for(Turn u : turns) {
-			if(u.getId().equals(id)) {
-				found = u;
-				break;
+		boolean wasFound = false;
+		for(int i=0; i < turns.size() && !wasFound; i++) {
+			Turn turn_i = turns.get(i);
+			if(turn_i.getId().equalsIgnoreCase(id)) {
+				found = turn_i;
+				wasFound = true;
 			}
 		}
 		return found;
 	}
 
 	/**
-	 * Add a user to 
-	 * @param id
-	 * @throws UserAlreadyHasATurnException
-	 * @throws UserNotFoundException
+	 * Registers next available turn to user with id specified.
+	 * @param id, String, identification number of user to whom the turn will be assigned. Cannot be null.
+	 * <b>post: <b> turn was registered successfully if parameter was not null, user was found and didn't have a turn assigned already; otherwise, corresponding exception was thrown.
+	 * After setting turn to user, lasTurn was updated.
+	 * @throws UserNotFoundException if user with the specified id is not found.
+	 * @throws UserAlreadyHasATurnException, if user already has a turns assigned.
 	 */
 	public void registerTurn(String id) throws UserAlreadyHasATurnException, UserNotFoundException {
 		User usr = searchUser(id);
@@ -146,8 +153,10 @@ public class TurnsManager {
 	}
 
 	/**
-	 * 
-	 * @return
+	 * Generates next turn id ranging from A00 to Z99.
+	 * @param currentTurn, Turn, previous turn, based on this the next turn will be generated. 
+	 * E.g. if currentTurn was A0, next turn will be A1; if currentTurn was Z99, next turn will be A00.
+	 * @return String, id of the next turn. Its first character is a letter and the rest are numbers.
 	 */
 	public String generateNextTurnId(Turn currentTurn) {
 		String currTurn = currentTurn.getId();
@@ -162,8 +171,10 @@ public class TurnsManager {
 	}
 	
 	/**
-	 * 
-	 * @param turn
+	 * Dispatches the current turn: sets the state of current turn to either ATTENDED or USER_NOT_PRESENT. 
+	 * @param state, String, possible values are: "Attended." or "User not present".
+	 * <b>post:<b> After update the state of the current turn, user that had that turn could register another turn. (User's field Turn will be set to null).
+	 * @throws NoSuchElementException, if there are no turns registered whose state is ON_HOLD, i.e. all turns registered were already dispatched.
 	 */
 	public void dispatchTurn(String state) throws NoSuchElementException {
 		Turn currTurn = getCurrentTurn();
@@ -172,9 +183,9 @@ public class TurnsManager {
 	}
 	
 	/**
-	 * 
-	 * @return
-	 * @throws NoSuchElementException
+	 * Return the first turn that has not be dispatched.
+	 * @return Turn, the first turn that has not been dispatched.
+	 * @throws NoSuchElementException, if all turns are already dispatched, i.e. there are no turns waiting to be attended.
 	 */
 	public Turn getCurrentTurn() throws NoSuchElementException {
 		Turn curr_turn;
@@ -184,41 +195,45 @@ public class TurnsManager {
 		return curr_turn;
 	}
 	
+	// ------------------------------------------------------------------------------------------------
+	// Getters and setters
+	// ------------------------------------------------------------------------------------------------
+
 	/**
-	 * 
-	 * @return
+	 * Returns users.
+	 * @return ArrayList<User>, users.
 	 */
 	public ArrayList<User> getUsers() {
 		return this.users;
 	}
 
 	/**
-	 * 
-	 * @param users
+	 * Replace current users for the ones passed as parameter.
+	 * @param users, ArrayList<User>.
 	 */
 	public void setUsers(ArrayList<User> users) {
 		this.users = users;
 	}
 
 	/**
-	 * 
-	 * @return
+	 * Returns turns.
+	 * @return ArrayList<Turn>, turns registered.
 	 */
 	public ArrayList<Turn> getTurns() {
 		return this.turns;
 	}
 
 	/**
-	 * 
-	 * @param turns
+	 * Update turns.
+	 * @param turns, ArrayList<Turn> turn.
 	 */
 	public void setTurns(ArrayList<Turn> turns) {
 		this.turns = turns;
 	}
 
 	/**
-	 * 
-	 * @param currentTurn
+	 * Updates current turn.
+	 * @param currentTurn, Turn.
 	 */
 	public void setCurrentTurn(Turn currentTurn) {
 		this.lastTurn = currentTurn;

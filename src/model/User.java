@@ -1,30 +1,40 @@
 package model;
 
+/**
+ * This class models the entity of User.
+ * @author Sebastián García acosta
+ *
+ */
 public class User {
 
-	private String name;
-	private String id;
-	private String typeOfDocument;
-	
+	// ------------------------------------------------------------------------------------------------
+	// Constants
+	// ------------------------------------------------------------------------------------------------	
 	public static final String CC = "citizenship card";
 	public static final String CE = "foreigner ID";
 	public static final String PA = "passport";
 	public static final String TI = "Identity card";
 	public static final String RC = "Civil register";
-	
 	public static final String[] TYPES_OF_DOCUMENTS = {CC, CE, PA, TI, RC};
 	
+	// ------------------------------------------------------------------------------------------------
+	// Attributes
+	// ------------------------------------------------------------------------------------------------
+	private String name;
+	private String id;
+	private String typeOfDocument;	
 	private String cellphoneNumber;
 	private String address;
 	private Turn turn;
 
 	/**
-	 * 
-	 * @param n
-	 * @param id
-	 * @param tod
-	 * @param cpn
-	 * @param a
+	 * Creates an User object.
+	 * @param n, String, name.
+	 * @param id, String, id.
+	 * @param tod, String, type of document.
+	 * @param cpn, String, cell-phone number.
+	 * @param a, String, address.
+	 * @param t, Turn, turn.
 	 */
 	public User(String n, String id, String tod, String cpn, String a, Turn t) {
 		this.name = n;
@@ -35,82 +45,47 @@ public class User {
 		this.turn = t;
 	}
 
+	/**
+	 * Returns the user's turn.
+	 * @return Turn, turn.
+	 */
+	public Turn getTurn() {
+		return turn;
+	}
+
+	/**
+	 * Updates the user's turn.
+	 * @param turn, Turn turn.
+	 */
+	public void setTurn(Turn turn) {
+		this.turn = turn;
+	}
+
+	/**
+	 * Returns the user name.
+	 * @return String, user name.
+	 */
+//	public String getName() {
+//		return this.name;
+//	}
+
+	/**
+	 * Returns the Id of user.
+	 * @return String, user id.
+	 */
+	public String getId() {
+		return this.id;
+	}
+
+
+	/**
+	 * Returns the User string representation.
+	 * @return, String, attributes of user.
+	 */
 	@Override
 	public String toString() {
 		return "User [name=" + name + ", id=" + id + ", typeOfDocument=" + typeOfDocument + ", cellphoneNumber="
 				+ cellphoneNumber + ", address=" + address + ", turn=" + turn.toString() + "]";
 	}
 
-	public Turn getTurn() {
-		return turn;
-	}
-
-	public void setTurn(Turn turn) {
-		this.turn = turn;
-	}
-
-	public String getName() {
-		return this.name;
-	}
-
-	/**
-	 * 
-	 * @param name
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public String getId() {
-		return this.id;
-	}
-
-	/**
-	 * 
-	 * @param id
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public String getTypeOfDocument() {
-		return this.typeOfDocument;
-	}
-
-	/**
-	 * 
-	 * @param typeOfDocument
-	 */
-	public void setTypeOfDocument(String typeOfDocument) {
-		this.typeOfDocument = typeOfDocument;
-	}
-
-	public String getCellphoneNumber() {
-		return this.cellphoneNumber;
-	}
-
-	/**
-	 * 
-	 * @param cellphoneNumber
-	 */
-	public void setCellphoneNumber(String cellphoneNumber) {
-		this.cellphoneNumber = cellphoneNumber;
-	}
-
-	public String getAddress() {
-		return this.address;
-	}
-
-	/**
-	 * 
-	 * @param address
-	 */
-	public void setAddress(String address) {
-		this.address = address;
-	}
-	
-	@Override
-	public boolean equals(Object o) {
-		return ( ((User) o).getId() == this.id );
-	}
 }

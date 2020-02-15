@@ -13,9 +13,14 @@ import CustomExceptions.UserAlreadyRegisteredException;
 import CustomExceptions.UserNotFoundException;
 import CustomExceptions.InvalidInputException;;
 
+/**
+ * Main class for TurnsApp
+ * @author Sebastián García Acosta
+ *
+ */
 public class Main {
 	/**
-	 * 
+	 * Main method.
 	 * @param args
 	 */
 	public static void main(String[] args) throws IOException {
@@ -71,7 +76,9 @@ public class Main {
 			case 2:
 				print("The next available turn is " + manager.generateNextTurnId(manager.lastTurn)
 						+ ". Do you want to assign it to some user? [y/n]: ");
-				String y_n = String.valueOf(sc.readLine().charAt(0));
+				String y_n = "";
+				try { y_n = String.valueOf(sc.readLine().charAt(0)); }
+				catch(StringIndexOutOfBoundsException e) { println("Invalid choice"); break; }
 				if (y_n.equalsIgnoreCase("n")) { println("Ok, returning to menu..."); } 
 				else if (y_n.equalsIgnoreCase("y")) {
 					print("Write the id of the user: ");
@@ -122,10 +129,18 @@ public class Main {
 		}
 	}
 
+	/**
+	 * Wrapper method for System.out.print. The only use of this method is to avoid typing System.out.print all the time.
+	 * @param s, String to be printed.
+	 */
 	public static void print(String s) {
 		System.out.print(s);
 	}
-
+	
+	/**
+	 * Wrapper method for System.out.println. The only use of this method is to avoid typing System.out.println all the time.
+	 * @param s, String to be printed.
+	 */
 	public static void println(String s) {
 		System.out.println(s);
 	}
