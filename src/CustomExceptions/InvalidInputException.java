@@ -1,5 +1,8 @@
 package CustomExceptions;
 
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 /**
  * This class models the exception: InvalidInputException.
  * @author sebastian
@@ -14,7 +17,8 @@ public class InvalidInputException extends IllegalArgumentException{
 	 * @param atr, String, name of the attribute.
 	 * @param expectedFormat, String, expected format of attribute.
 	 */
-	public InvalidInputException(String atr, String expectedFormat) {
-		super("Invalid format for field " + atr + ". Field must contain only " + expectedFormat + ".");
+	public InvalidInputException(ArrayList<String> fields, String expectedFormat) {
+		super("Invalid format for fields: " + fields.stream().map(Object::toString)
+				   .collect(Collectors.joining(", ")) + ". Fields must contain only " + expectedFormat + ".");
 	}
 } 

@@ -11,16 +11,18 @@ public class User {
 	// Constants
 	// ------------------------------------------------------------------------------------------------	
 	public static final String CC = "citizenship card";
-	public static final String CE = "foreigner ID";
+	public static final String FI = "foreigner ID";
 	public static final String PA = "passport";
-	public static final String TI = "Identity card";
-	public static final String RC = "Civil register";
-	public static final String[] TYPES_OF_DOCUMENTS = {CC, CE, PA, TI, RC};
+	public static final String IC = "Identity card";
+	public static final String CR = "Civil register";
+	public static final String[] TYPES_OF_DOCUMENTS = {CC, FI, PA, IC, CR};
 	
 	// ------------------------------------------------------------------------------------------------
 	// Attributes
 	// ------------------------------------------------------------------------------------------------
-	private String name;
+	private String names;
+	@SuppressWarnings("unused")
+	private String surnames;
 	private String id;
 	private String typeOfDocument;	
 	private String cellphoneNumber;
@@ -36,8 +38,9 @@ public class User {
 	 * @param a, String, address.
 	 * @param t, Turn, turn.
 	 */
-	public User(String n, String id, String tod, String cpn, String a, Turn t) {
-		this.name = n;
+	public User(String n, String s, String id, String tod, String cpn, String a, Turn t) {
+		this.names = n;
+		this.surnames = s;
 		this.id = id;
 		this.typeOfDocument = tod;
 		this.cellphoneNumber = cpn;
@@ -84,8 +87,12 @@ public class User {
 	 */
 	@Override
 	public String toString() {
-		return "User [name=" + name + ", id=" + id + ", typeOfDocument=" + typeOfDocument + ", cellphoneNumber="
-				+ cellphoneNumber + ", address=" + address + ", turn=" + turn.toString() + "]";
+		return "User [name=" + names + ", id=" + id + ", typeOfDocument=" + typeOfDocument + ", cellphoneNumber="
+				+ cellphoneNumber + ", address=" + address + ", turn=" + ((turn == null) ? "null": turn.getId()) + "]";
+	}
+
+	public boolean equals(User obj) {
+		return (this.id.equalsIgnoreCase(obj.getId()));
 	}
 
 }

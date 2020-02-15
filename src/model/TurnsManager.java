@@ -1,12 +1,11 @@
 package model;
 
 import java.util.ArrayList;
-
-
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import CustomExceptions.*;
 
 /**
@@ -42,7 +41,7 @@ public class TurnsManager {
 	/**
 	 * This final array is used to indicate the required fields needed to register a user. 
 	 */
-	public static final String[] REQUIRED_FIELDS = {"name", "document number", "type of document"};
+	public static final String[] REQUIRED_FIELDS = {"names", "surnames", "type of document", "document number"};
 
 	// ------------------------------------------------------------------------------------------------
 	// Constructors
@@ -55,7 +54,7 @@ public class TurnsManager {
 	public TurnsManager() {
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.lastTurn = new Turn("A-1", null);
+		this.lastTurn = new Turn("Z98", null);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -65,37 +64,67 @@ public class TurnsManager {
 	/**
 	 * Adds a user to the turns manager if and only if potential user's fields meet the following rules: <br>
 	 * @param n, String, name. REQUIRED FIELD. Must be alphabetic.
+	 * @param s, String, surnames. REQUIRED FIELD. Must be alphabetic.
 	 * @param id, String id. REQUIRED FIELD. Must be numerical.
 	 * @param tod, String, type of document. REQUIRED FIELD. Possible values: CC, CE, PA, TI, RC (see User class for detailed explanation).
 	 * @param cpn, String cell-phone number. Must be numerical.
 	 * @param a, String, address. Optional field.
 	 * @param t, Turn, turn assigned to user. Initially is null.
-	 * <b>All parameters (n, id, cpn, a, t) are not null. <b>
+	 * <b>All parameters (n, s, id, cpn, a, t) are not null. <b>
 	 * <b>post:</b> User was added successfully if all required fields were not blank, all fields were in their corresponding format, and its id was unique. Otherwise, the corresponding exception was thrown.    
 	 * @throws UserAlreadyRegisteredException if another user with same id is found.
 	 * @throws BlankRequiredFieldException if one of the REQUIRED FIELDS indicated is blank. 
 	 * @throws InvalidInputException if one of the numeric fields indicated above as numerical does not contain only numbers.
 	 */
-	public void addUser(String n, String id, String tod, String cpn, String a, Turn t)
+	public void addUser(String n, String s, String id, String tod, String cpn, String a, Turn t)
 			throws UserAlreadyRegisteredException, BlankRequiredFieldException, InvalidInputException {
-		Map<String, String> requiredFields = new HashMap<String, String>();
-		String[] required_args = {n, id, tod};
-		
-		for(int i = 0; i < REQUIRED_FIELDS.length; i++)
-			requiredFields.put(REQUIRED_FIELDS[i], required_args[i]);
+		// ------------------------------------------------------------------------------------------------
+		// Validate that user is not already registered
+		// ------------------------------------------------------------------------------------------------		
+		if (searchUser(id) != null)	throw new UserAlreadyRegisteredException(id);
+
+		// ------------------------------------------------------------------------------------------------
+		// Validate that required fields are not blank
+		// ------------------------------------------------------------------------------------------------		
+		String[] required_args = {n, s, tod, id};
+		Map<String, String> requiredFields = IntStream.range(0, REQUIRED_FIELDS.length).boxed()
+											.collect( Collectors.toMap(i -> REQUIRED_FIELDS[i], i -> required_args[i]));
 		
 		ArrayList<String> blankFieldsList = requiredFields.entrySet().stream()
 										.filter(item -> item.getValue().isBlank())
 										.map(Map.Entry::getKey)
 										.collect(Collectors.toCollection(ArrayList::new));
-		if (searchUser(id) != null) throw new UserAlreadyRegisteredException(id);
-		if (!blankFieldsList.isEmpty()) throw new BlankRequiredFieldException(blankFieldsList);
-		if (!n.matches("^[a-zA-Z]*$")) throw new  InvalidInputException("name", "letters.");
-		if (!id.matches("\\d+")) throw new InvalidInputException("identification number", "numbers");
-		if (!cpn.isBlank() && !cpn.matches("\\d+")) throw new InvalidInputException("cellphone number", "numbers");
-		users.add(new User(n, id, tod, cpn, a, t));
-	}
+		
+		if (!blankFieldsList.isEmpty())	throw new BlankRequiredFieldException(blankFieldsList);
+		
+		// ------------------------------------------------------------------------------------------------
+		// Validate that alphabetic fields contains only letters
+		// ------------------------------------------------------------------------------------------------		
+		String[] alphabeticFields = {n, s, tod};
+		Map<String, String> alphabeticFieldsDict = IntStream.range(0, alphabeticFields.length).boxed()
+			    .collect(Collectors.toMap(i -> REQUIRED_FIELDS[i], i -> alphabeticFields[i]));		
 
+		ArrayList<String> wrongAlphabeticFields = alphabeticFieldsDict.entrySet().stream()
+												  .filter( item -> !item.getValue()
+														  			.replaceAll("\\s+","")
+														  			.chars()
+														  			.allMatch(Character::isLetter))
+												  .map(Map.Entry::getKey)
+												  .collect(Collectors.toCollection(ArrayList::new));
+		
+		if(!wrongAlphabeticFields.isEmpty()) throw new InvalidInputException(wrongAlphabeticFields, "alphabetic characters");
+
+		// ------------------------------------------------------------------------------------------------
+		// Validate that numeric fields contain only numbers
+		// ------------------------------------------------------------------------------------------------
+		ArrayList<String> invalidNumericFields = new ArrayList<String>();
+		if (!id.matches("\\d+")) invalidNumericFields.add("document number");
+		if (!cpn.isBlank() && !cpn.matches("\\d+")) invalidNumericFields.add("cellphone number");
+		
+		if(!invalidNumericFields.isEmpty()) throw new InvalidInputException(invalidNumericFields, "numerical characters");
+		users.add(new User(n, s, id, tod, cpn, a, t));
+	}
+	
 	/**
 	 * Searches a user by its id. 
 	 * @param id, String, identification number of user.
@@ -148,7 +177,7 @@ public class TurnsManager {
 			Turn turn = new Turn(generateNextTurnId(lastTurn), usr);
 			usr.setTurn(turn);
 			turns.add(turn);
-			lastTurn = new Turn(generateNextTurnId(lastTurn), null);
+			lastTurn.setId(generateNextTurnId(lastTurn));
 		}
 	}
 
@@ -235,8 +264,8 @@ public class TurnsManager {
 	 * Updates current turn.
 	 * @param currentTurn, Turn.
 	 */
-	public void setCurrentTurn(Turn currentTurn) {
-		this.lastTurn = currentTurn;
+	public void setLastTurn(Turn lastTurn) {
+		this.lastTurn = lastTurn;
 	}
 
 }

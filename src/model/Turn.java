@@ -26,11 +26,10 @@ public class Turn {
 	// ------------------------------------------------------------------------------------------------	
 	/**
 	 * Constructor
-	 * @param id
-	 * @param user
+	 * @param id, String.
+	 * @param usr, User.
 	 */
 	public Turn(String id, User usr) {
-		// TODO - implement Turn.Turn
 		this.id = id;
 		this.state = ON_HOLD;
 		this.user = usr;
@@ -52,6 +51,14 @@ public class Turn {
 		return id;
 	}
 	
+	/**
+	 * 
+	 * @param id
+	 */
+	public void setId(String id) {
+		this.id = id;
+	}
+	
 	@Override
 	public String toString() {
 		return "Turn [state=" + state + ", id=" + id + "]";
@@ -70,5 +77,9 @@ public class Turn {
 	 */
 	public void setState(String state) {
 		this.state = state;
+	}
+	
+	public boolean equals(Turn obj) {
+		return (this.id.equalsIgnoreCase(obj.getId()));
 	}
 }
