@@ -1,9 +1,8 @@
 package model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -19,7 +18,7 @@ public class TurnsManager {
 	public TurnsManager() {
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.lastTurn = new Turn("A-1");
+		this.lastTurn = new Turn("A-1", null);
 	}
 
 	/**
@@ -31,7 +30,7 @@ public class TurnsManager {
 	 * @param a
 	 */
 	public void addUser(String n, String id, String tod, String cpn, String a, Turn t)
-			throws UserAlreadyRegisteredException, BlankRequiredFieldException, NumberFormatException {
+			throws UserAlreadyRegisteredException, BlankRequiredFieldException, InvalidFormatException {
 		Map<String, String> requiredFields = new HashMap<String, String>();
 		String[] required_args = {n, id, tod};
 		
@@ -44,8 +43,9 @@ public class TurnsManager {
 										.collect(Collectors.toCollection(ArrayList::new));
 		if (searchUser(id) != null) throw new UserAlreadyRegisteredException(id);
 		if (!blankFieldsList.isEmpty()) throw new BlankRequiredFieldException(blankFieldsList);
-		if(!id.matches("\\d+")) throw new NumberFormatException("Invalid document number");
-		if(!cpn.isBlank() && !cpn.matches("\\d+")) throw new NumberFormatException("Invalid cellphone number");
+		if (!n.matches("^[a-zA-Z]*$")) throw new  InvalidFormatException("name", "letters.");
+		if (!id.matches("\\d+")) throw new InvalidFormatException("identification number", "numbers");
+		if (!cpn.isBlank() && !cpn.matches("\\d+")) throw new InvalidFormatException("cellphone number", "numbers");
 		users.add(new User(n, id, tod, cpn, a, t));
 	}
 
@@ -91,10 +91,10 @@ public class TurnsManager {
 		if(usr == null) 				throw new UserNotFoundException(id);
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
-			Turn turn = new Turn(generateNextTurnId(lastTurn));
+			Turn turn = new Turn(generateNextTurnId(lastTurn), usr);
 			usr.setTurn(turn);
 			turns.add(turn);
-			lastTurn = new Turn(generateNextTurnId(lastTurn));
+			lastTurn = new Turn(generateNextTurnId(lastTurn), null);
 		}
 	}
 
@@ -121,6 +121,7 @@ public class TurnsManager {
 	public void dispatchTurn(String state) throws NoSuchElementException {
 		Turn currTurn = getCurrentTurn();
 		currTurn.setState(state);
+		searchUser(currTurn.getUser().getId()).setTurn(null);;
 	}
 	
 	public Turn getCurrentTurn() throws NoSuchElementException {

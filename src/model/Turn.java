@@ -7,16 +7,34 @@ public class Turn {
 	public static final String ON_HOLD = "On hold...";
 	private String state;
 	private String id;
+	private User user;
 
 	/**
 	 * Constructor
 	 * @param id
 	 * @param user
 	 */
-	public Turn(String id) {
+	public Turn(String id, User usr) {
 		// TODO - implement Turn.Turn
 		this.id = id;
 		this.state = ON_HOLD;
+		this.user = usr;
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
+	public User getUser() {
+		return user;
+	}
+
+	/**
+	 * 
+	 * @param user
+	 */
+	public void setUser(User user) {
+		this.user = user;
 	}
 
 	/**

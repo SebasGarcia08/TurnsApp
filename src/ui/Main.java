@@ -3,19 +3,15 @@ package ui;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.InputMismatchException;
 import java.util.NoSuchElementException;
 
 import model.*;
-
-//import java.util.InputMismatchException;
-//import java.util.Scanner;
 
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
 import CustomExceptions.UserNotFoundException;
+import CustomExceptions.InvalidFormatException;;
 
 public class Main {
 	/**
@@ -30,12 +26,15 @@ public class Main {
 		String OPCIONES = "\n1). Add user.\n2). Register turn.\n3). Attend\n4) Exit";
 		while (election != 4) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer: ");
-			election = Integer.parseInt(sc.readLine());
+			try {
+				election = Integer.parseInt(sc.readLine());
+			} catch(NumberFormatException e) {
+				election = -1;
+			}
 			switch (election) {
 			case 1:
-				try {
 					String n, tod, id, cpn, a;
-					println("Please fill-in the following fields (required ones are marked with *)");
+					println("\nPlease fill-in the following fields (required ones are marked with *)");
 
 					print("Name *: ");
 					n = sc.readLine();
@@ -43,11 +42,11 @@ public class Main {
 					println("Type of document *:");
 					
 					for(int i = 0; i < User.TYPES_OF_DOCUMENTS.length; i++)
-						println("	" + (i+1) + "). " + User.TYPES_OF_DOCUMENTS[i]);
-					print("        Answer [1-5]: ");
+						println("\t" + (i+1) + "). " + User.TYPES_OF_DOCUMENTS[i]);
+					print("\tAnswer [1-5]: ");
 					try {
 						tod = User.TYPES_OF_DOCUMENTS[Integer.parseInt(sc.readLine())-1];
-					}catch(IndexOutOfBoundsException e) {
+					}catch(IndexOutOfBoundsException | NumberFormatException e) {
 						println("Invalid choice");
 						break;
 					}
@@ -60,14 +59,13 @@ public class Main {
 
 					print("Address: ");
 					a = sc.readLine();
-
-					manager.addUser(n, id, tod, cpn, a, null);
-					println("User addesd succesfully.");
-
-				} catch(UserAlreadyRegisteredException | BlankRequiredFieldException | NumberFormatException e) {
-					println(e.getMessage());
-					break;
-				}
+					try {
+						manager.addUser(n, id, tod, cpn, a, null);
+						println("User addesd succesfully.");
+					} catch(UserAlreadyRegisteredException | BlankRequiredFieldException | InvalidFormatException e) {
+						println(e.getMessage());
+						break;
+					}
 				break;
 
 			case 2:
@@ -90,10 +88,10 @@ public class Main {
 			case 3:
 				try {
 					println("The current turn is " + manager.getCurrentTurn().getId());
-					print("Choose what to do with it: \n" + 
-						    "		1) Attend\n"+ 
-						    "       2) User not present\n"+
-						    "       3) Go back to main menu\n"+ 
+					print("Choose what to do with it:\n" + 
+						    "\t1) Attend\n"+ 
+						    "\t2) User not present\n"+
+						    "\t3) Go back to main menu\n"+ 
 						    "Answer[1-3]: ");
 					int res = Integer.parseInt(sc.readLine());
 						switch (res) {
