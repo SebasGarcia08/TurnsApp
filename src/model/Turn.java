@@ -42,6 +42,14 @@ public class Turn {
 	public User getUser() {
 		return user;
 	}
+	
+	/**
+	 * Updates user.
+	 * @param usr, User.
+	 */
+	public void setUser(User usr) {
+		this.user = usr;
+	}
 
 	/**
 	 * Returns id.

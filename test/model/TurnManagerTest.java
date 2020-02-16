@@ -3,6 +3,8 @@ package model;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -10,7 +12,9 @@ import org.junit.rules.ExpectedException;
 
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.InvalidInputException;
+import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
+import CustomExceptions.UserNotFoundException;
 
 /**
  * 
@@ -19,9 +23,11 @@ import CustomExceptions.UserAlreadyRegisteredException;
  */
 public class TurnManagerTest {
 
-	// ------------------------------------------------------------------------------------------------
-	// Attributes
-	// ------------------------------------------------------------------------------------------------
+/* 
+─█▀▀█ ▀▀█▀▀ ▀▀█▀▀ ░█▀▀█ ▀█▀ ░█▀▀█ ░█─░█ ▀▀█▀▀ ░█▀▀▀ ░█▀▀▀█ 
+░█▄▄█ ─░█── ─░█── ░█▄▄▀ ░█─ ░█▀▀▄ ░█─░█ ─░█── ░█▀▀▀ ─▀▀▀▄▄ 
+░█─░█ ─░█── ─░█── ░█─░█ ▄█▄ ░█▄▄█ ─▀▄▄▀ ─░█── ░█▄▄▄ ░█▄▄▄█	
+*/
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
 	private TurnsManager manager;
@@ -44,10 +50,15 @@ public class TurnManagerTest {
 	@Rule
 	public ExpectedException exceptionRule = ExpectedException.none();
 
-	// ------------------------------------------------------------------------------------------------
-	// SCENARIOS
-	// ------------------------------------------------------------------------------------------------
+/*
 
+		░██████╗░█████╗░███████╗███╗░░██╗░█████╗░██████╗░██╗░█████╗░░██████╗
+		██╔════╝██╔══██╗██╔════╝████╗░██║██╔══██╗██╔══██╗██║██╔══██╗██╔════╝
+		╚█████╗░██║░░╚═╝█████╗░░██╔██╗██║███████║██████╔╝██║██║░░██║╚█████╗░
+		░╚═══██╗██║░░██╗██╔══╝░░██║╚████║██╔══██║██╔══██╗██║██║░░██║░╚═══██╗
+		██████╔╝╚█████╔╝███████╗██║░╚███║██║░░██║██║░░██║██║╚█████╔╝██████╔╝
+		╚═════╝░░╚════╝░╚══════╝╚═╝░░╚══╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░╚════╝░╚═════╝░
+*/
 	/**
 	 * FIRST SCNEARIO:
 	 * An object of class TurnsManager with two initialized (and empty) 
@@ -75,48 +86,36 @@ public class TurnManagerTest {
 	 * 
 	 * usr3: object from User class with names=”Elon”, 
 	 * surnames=”Musk”, id=”125”, typeOfDocument=”FI”, 
-	 * cellphoneNumber=”422”, address=”Cra 107 # 121-20 Desepaz borough”, turn=null.
+	 * cellphoneNumber=”422”, address=”Cra 107 # 121-20 Desepaz borough”, 
+	 * turn= object from class Turn with id="A00", state="On hold...".
 	 * 
 	 */
 	public void threeUsrsSetup() {
-		ArrayList<User> usrs = new ArrayList<User>();
-		User usr1 = new User("Melchor Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
-		User usr2 = new User("Daniel", "Gasparin Ordoniez", "124", User.IC, "421", "", null);
-		User usr3 = new User("Elon", "Musk", "125", "FI", "422", "Cra 107 # 121-20 Desepaz borough", null);
-		usrs.add(usr1);
-		usrs.add(usr2);
-		usrs.add(usr3);
-		this.users = usrs;
-		this.turns = new ArrayList<Turn>();
 		this.manager = new TurnsManager();
+		ArrayList<User> usrs = new ArrayList<User>();
+		User seyerman = new User("Melchor Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
+		User elMonitorMasBuenaGenteDelMundo = new User("Daniel", "Nose Nose", "124", User.IC, "421", "", null);
+		User elonMuskElMasCrack = new User("Elon", "Musk", "125", "FI", "422", "Cra 107 # 121-20 Desepaz borough", 
+								  new Turn(manager.generateNextTurnId(manager.lastTurn), null));
+		this.turns = new ArrayList<Turn>();
+		elonMuskElMasCrack.getTurn().setUser(elonMuskElMasCrack);
+		turns.add(elonMuskElMasCrack.getTurn());
+		usrs.add(seyerman);
+		usrs.add(elMonitorMasBuenaGenteDelMundo);
+		usrs.add(elonMuskElMasCrack);
+		this.users = usrs;
 		manager.setTurns(turns);
 		manager.setUsers(usrs);
 	}
 	
-	// ------------------------------------------------------------------------------------------------
-	// Test cases
-	// ------------------------------------------------------------------------------------------------
-	
-	// ------------------------------------------------------------------------------------------------
-	// 		Adding functional requirement.
-	// ------------------------------------------------------------------------------------------------
-	@Test
-	public void testAddingReq() {
-		testAddingWhenUserDoesNotExists();
-		testNotAddingDuplicatedUser();
-		testNotAddingWithoutRequiredFields();
-		testNotAddingWhenAlphabeticFieldsAreInvalid();
-		testNotAddingWhenNumericFieldsAreInvalid();
-	}
-	
-	// ------------------------------------------------------------------------------------------------
-	// 		Searching method.
-	// ------------------------------------------------------------------------------------------------
-	@Test
-	public void testSearching() {
-		testSearchWhenThereAreNoUsers();
-		testSearchExistingUser();
-	}
+/*
+			████████╗███████╗░██████╗████████╗  ░█████╗░░█████╗░░██████╗███████╗░██████╗
+			╚══██╔══╝██╔════╝██╔════╝╚══██╔══╝  ██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝
+			░░░██║░░░█████╗░░╚█████╗░░░░██║░░░  ██║░░╚═╝███████║╚█████╗░█████╗░░╚█████╗░
+			░░░██║░░░██╔══╝░░░╚═══██╗░░░██║░░░  ██║░░██╗██╔══██║░╚═══██╗██╔══╝░░░╚═══██╗
+			░░░██║░░░███████╗██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║██████╔╝███████╗██████╔╝
+			░░░╚═╝░░░╚══════╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚═════╝░╚══════╝╚═════╝░
+*/
 	
 	// ------------------------------------------------------------------------------------------------
 	// 		Test cases for Adding functional requirement.
@@ -148,7 +147,7 @@ public class TurnManagerTest {
 	}
 	
 	@Test
-	public void testNotAddingWithoutRequiredFields()  {
+	public void testNotAddingWithoutRequiredFields() {
 		emptyObjsSetup();
 		String expectedMsg = "Parameters: names, document number, surnames, type of document must be filled.";
 		boolean testPassed = false;
@@ -183,7 +182,7 @@ public class TurnManagerTest {
 		try {
 			manager.addUser("Nando", "Salvador Angulo", "id3ntity", User.CC, "abs", "", null);
 		} catch (UserAlreadyRegisteredException | BlankRequiredFieldException e) {
-			fail("This should not be the exceptions thrown");
+			fail("Tmanager.registerTurn(\"125\");his should not be the exceptions thrown");
 		}
 	}
 	
@@ -203,7 +202,74 @@ public class TurnManagerTest {
 	}
 	
 	// ------------------------------------------------------------------------------------------------
-	// Test cases for searching method
+	// Test cases for registering turn method
 	// ------------------------------------------------------------------------------------------------
+	@Test	
+	public void testRegisteringTurnToUserThatDoesNotHaveOne() {
+		threeUsrsSetup();
+		try {
+			manager.registerTurn("123");
+		} catch (UserNotFoundException e) {
+			fail("App is not able to found created user.");
+		} catch (UserAlreadyHasATurnException e) {
+			fail("App is overriding user's turn.");
+		}
+		assertEquals("App is not assgining right initial turn.", "A00", manager.searchUser("123").getTurn().getId());
+	}
+	
+	@Test
+	public void testRegisteringTurnToUserThatAlreadyHaveOne()  throws UserAlreadyHasATurnException {
+		threeUsrsSetup();
+		exceptionRule.expect(UserAlreadyHasATurnException.class);
+		String expectedMsg = "User with id " + 125 + " already has turn " 
+				  + "A00" + " assgined and its state is: " + Turn.ON_HOLD;
+		exceptionRule.expectMessage(expectedMsg);
+		try {
+			manager.registerTurn("125");
+		} catch (UserNotFoundException e) {
+			fail("UserNotFoundException should not be thrown when trying to register some turn to another user.");
+		} 
+	}
+		
+	@Test
+	public void testTurnIdGeneration() {
+		emptyObjsSetup();
+		int n = 26*100;
+		String[] allPossibleCombinationsOfTurns = new String[n];
+		int cont = 0;
+		String previuosTurnId, subsequentTurnId;
+		int idxOfNextElementInArr;
+		
+		// Create array that contains ALL possible turns.
+		for(int i = (int) 'A' ; i <= (int) 'Z'; i++) 
+			for(int j=0; j < 100; j++) {
+				previuosTurnId =  ((char) i) + ((j < 10) ? "0" + j : String.valueOf(j));
+				allPossibleCombinationsOfTurns[cont] = previuosTurnId;
+				cont++;
+			}
+		
+		for(int i = 0; i < n; i++) {
+			previuosTurnId = allPossibleCombinationsOfTurns[i];
+			idxOfNextElementInArr = ( (i == n-1) ? (i%(n-1)) : i+1 );
+			subsequentTurnId = allPossibleCombinationsOfTurns[ idxOfNextElementInArr ];
+			assertEquals("App is not generating subsequent turn id code.", subsequentTurnId, manager.generateNextTurnId(new Turn(previuosTurnId, null)));
+		}
+	}
+	
+	// ------------------------------------------------------------------------------------------------
+	// Test cases for attend functionality
+	// ------------------------------------------------------------------------------------------------
+	@Test
+	public void testAttendTurnWhenThereAreMoreToAttend() {
+		threeUsrsSetup();
+		try {
+			manager.registerTurn("124");
+		} catch (UserNotFoundException e) {
+			fail("User is not saved.");
+		} catch (UserAlreadyHasATurnException e) {
+			fail("Turn is assgined to turn aribtrarly.");
+		}
+		assertEquals("App is not able to keep track of current turn to be attended","A00",manager.getCurrentTurn().getId());
+	}
 	
 }

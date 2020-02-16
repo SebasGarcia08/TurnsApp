@@ -3,10 +3,13 @@ package ui;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import model.*;
-
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
@@ -28,7 +31,59 @@ public class Main {
 		final String FAILED_OP = "[FAILED OPERATION]";
 		TurnsManager manager = new TurnsManager();
 		BufferedReader sc = new BufferedReader(new InputStreamReader(System.in));
+		
+		// Text art created at: https://fsymbols.com/text-art/
 
+		String welcomeTo = 	"░██╗░░░░░░░██╗███████╗██╗░░░░░░█████╗░░█████╗░███╗░░░███╗███████╗  ████████╗░█████╗░██╗\n"+
+							"░██║░░██╗░░██║██╔════╝██║░░░░░██╔══██╗██╔══██╗████╗░████║██╔════╝  ╚══██╔══╝██╔══██╗╚═╝\n"+
+							"░╚██╗████╗██╔╝█████╗░░██║░░░░░██║░░╚═╝██║░░██║██╔████╔██║█████╗░░  ░░░██║░░░██║░░██║░░░\n"+
+							"░░████╔═████║░██╔══╝░░██║░░░░░██║░░██╗██║░░██║██║╚██╔╝██║██╔══╝░░  ░░░██║░░░██║░░██║░░░\n"+
+							"░░╚██╔╝░╚██╔╝░███████╗███████╗╚█████╔╝╚█████╔╝██║░╚═╝░██║███████╗  ░░░██║░░░╚█████╔╝██╗\n"+
+							"░░░╚═╝░░░╚═╝░░╚══════╝╚══════╝░╚════╝░░╚════╝░╚═╝░░░░░╚═╝╚══════╝  ░░░╚═╝░░░░╚════╝░╚═╝\n";
+
+		String TurnsApp = "████████╗██╗░░░██╗██████╗░███╗░░██╗░██████╗  ░█████╗░██████╗░██████╗░\n"+
+						  "╚══██╔══╝██║░░░██║██╔══██╗████╗░██║██╔════╝  ██╔══██╗██╔══██╗██╔══██╗\n"+
+						  "░░░██║░░░██║░░░██║██████╔╝██╔██╗██║╚█████╗░  ███████║██████╔╝██████╔╝\n"+
+						  "░░░██║░░░██║░░░██║██╔══██╗██║╚████║░╚═══██╗  ██╔══██║██╔═══╝░██╔═══╝░\n"+
+						  "░░░██║░░░╚██████╔╝██║░░██║██║░╚███║██████╔╝  ██║░░██║██║░░░░░██║░░░░░\n"+
+						  "░░░╚═╝░░░░╚═════╝░╚═╝░░╚═╝╚═╝░░╚══╝╚═════╝░  ╚═╝░░╚═╝╚═╝░░░░░╚═╝░░░░░\n";
+				
+				String by = "█▄▄ █▄█ ▀   \n"+
+							"█▄█ ░█░ ▄   \n";
+		
+		String authority = "█▀ █▀▀ █▄▄ ▄▀█ █▀ ▀█▀ █ ▄▀█ █▄░█   █▀▀ ▄▀█ █▀█ █▀▀ █ ▄▀█   ▄▀█ █▀▀ █▀█ █▀ ▀█▀ ▄▀█\n"+
+						  "▄█ ██▄ █▄█ █▀█ ▄█ ░█░ █ █▀█ █░▀█   █▄█ █▀█ █▀▄ █▄▄ █ █▀█   █▀█ █▄▄ █▄█ ▄█ ░█░ █▀█\n";
+		
+		int indentationLevels = 5;
+				
+		println(String.join("\n", 
+					Arrays.asList(welcomeTo.split("\n")).stream()
+					.map(s -> String.join("", Collections.nCopies(4, "\t")) + s)
+					.collect( Collectors.toCollection(ArrayList::new))
+		));
+
+		println(String.join("\n", 
+				Arrays.asList(TurnsApp.split("\n")).stream()
+				.map(s -> String.join("", Collections.nCopies(indentationLevels, "\t")) + s)
+				.collect( Collectors.toCollection(ArrayList::new))
+		));
+
+		println("\n");
+		
+		println(String.join("\n", 
+				Arrays.asList(by.split("\n")).stream()
+				.map(s -> String.join("", Collections.nCopies(6+3, "\t")) + s)
+				.collect( Collectors.toCollection(ArrayList::new))
+		));
+		
+		println("\n");
+		
+		println(String.join("\n", 
+				Arrays.asList(authority.split("\n")).stream()
+				.map(s -> String.join("", Collections.nCopies(2+2, "\t")) + s)
+				.collect( Collectors.toCollection(ArrayList::new))
+		));
+		
 		int election = 0;
 		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4).Exit";
 		while (election != 4) {
@@ -104,19 +159,44 @@ public class Main {
 			case 3:
 				try {
 					println("\n[ATTEND TURN]");
-					print("\tThe current turn is " + manager.getCurrentTurn().getId());
-					print(". Choose what to do with it:\n" + 
-						    "\t" + "\t1) Dispatch as: Attend\n"+ 
-						    "\t" + "\t2) Dispatch as: User not present\n"+
-						    "\t" + "\t3) Go back to main menu\n"+ 
-						    "\tAnswer[1-3]: ");
+					println("\tCurrent turn is " +  manager.getCurrentTurn().getId());
+					println("\tChooose: ");
+					println("\t\t1). Attend current turn.");
+					println("\t\t2). Attend another turn");
+					println("\t\t3). Go back to menu");
+					print("\tAnswer [1-2]: ");
+					
+					int attentionMethodRes = Integer.parseInt(sc.readLine());
+					Turn turnToBeAttended = null;
+					
+					switch (attentionMethodRes) {
+					case 1:
+						turnToBeAttended = manager.getCurrentTurn();
+						break;
+					case 2:
+						print("Type the id of Turn that you want to attend: ");
+						String idSearched = sc.readLine();
+						turnToBeAttended = manager.searchTurn(idSearched);
+						break;
+					case 3:
+						break;
+					default:
+						println("Invalid choice");
+						break;
+					}
+					if(attentionMethodRes!=3) {
+					print("\t\t\tChoose the attention state:\n" + 
+						    "\t\t\t" + "\t1) Dispatch as: Attended\n"+ 
+						    "\t\t\t" + "\t2) Dispatch as: User not present\n"+
+						    "\t\t\t" + "\t3) Go back to main menu\n"+ 
+						    "\t\t\tAnswer[1-3]: ");
 					int res = Integer.parseInt(sc.readLine());
 						switch (res) {
 						case 1:
-							manager.dispatchTurn(Turn.ATTENDED);
+							manager.dispatchTurn(turnToBeAttended, Turn.ATTENDED);
 							break;
 						case 2:
-							manager.dispatchTurn(Turn.USER_NOT_PRESENT);
+							manager.dispatchTurn(turnToBeAttended, Turn.USER_NOT_PRESENT);
 							break;
 						case 3:	
 							break;
@@ -125,7 +205,8 @@ public class Main {
 							break;
 						}
 						println(SUCCESS_OP);
-				} catch(NoSuchElementException e) {
+					}
+				} catch(NoSuchElementException | NumberFormatException e) {
 					println(e.getMessage());
 					println(FAILED_OP);
 				}

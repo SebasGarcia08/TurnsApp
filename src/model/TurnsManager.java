@@ -54,7 +54,7 @@ public class TurnsManager {
 	public TurnsManager() {
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.lastTurn = new Turn("Z98", null);
+		this.lastTurn = new Turn("A-1", null);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -177,7 +177,7 @@ public class TurnsManager {
 			Turn turn = new Turn(generateNextTurnId(lastTurn), usr);
 			usr.setTurn(turn);
 			turns.add(turn);
-			lastTurn.setId(generateNextTurnId(lastTurn));
+			lastTurn.setId(turn.getId());
 		}
 	}
 
@@ -188,14 +188,14 @@ public class TurnsManager {
 	 * @return String, id of the next turn. Its first character is a letter and the rest are numbers.
 	 */
 	public String generateNextTurnId(Turn currentTurn) {
-		String currTurn = currentTurn.getId();
-		char letter = currTurn.charAt(0);
-		int number = Integer.parseInt(currTurn.substring(1, currTurn.length()));
+		String currTurnId = currentTurn.getId();
+		char letter = currTurnId.charAt(0);
+		int number = Integer.parseInt(currTurnId.substring(1, currTurnId.length()));
 		int ASCIICurrLetter = (int) letter;
-		int nextASCIILetter = (ASCIICurrLetter == 90) ? 65 : ASCIICurrLetter;
-		int nextTurnNumber = (number < 99) ? number + 1 : number - 99;
+		int nextASCIILetter = (ASCIICurrLetter == 90) ? 65 : ASCIICurrLetter+1;
+		int nextTurnNumber = (number < 99) ? number + 1 : 0;
 		char nextTurnLetter = (number < 99) ? letter : (char) nextASCIILetter;
-		String nextTurnId = String.valueOf(nextTurnLetter) + String.valueOf(nextTurnNumber);
+		String nextTurnId = String.valueOf(nextTurnLetter) + ((nextTurnNumber < 10) ? "0" + nextTurnNumber : String.valueOf(nextTurnNumber));
 		return nextTurnId;
 	}
 	
@@ -205,10 +205,23 @@ public class TurnsManager {
 	 * <b>post:<b> After update the state of the current turn, user that had that turn could register another turn. (User's field Turn will be set to null).
 	 * @throws NoSuchElementException, if there are no turns registered whose state is ON_HOLD, i.e. all turns registered were already dispatched.
 	 */
-	public void dispatchTurn(String state) throws NoSuchElementException {
-		Turn currTurn = getCurrentTurn();
-		currTurn.setState(state);
-		searchUser(currTurn.getUser().getId()).setTurn(null);;
+	public void dispatchTurn(Turn turn, String state) throws NoSuchElementException {
+		if(turn == null) throw new NoSuchElementException("Turn not found");
+		turn.setState(state);
+		searchUser(turn.getUser().getId()).setTurn(null);;
+	}
+	
+	/**
+	 * Consults what is the next turn to be attended.
+	 * @return Turn, next turn to be attended.
+	 */
+	public Turn consultNextTurnToBeAttended() throws NoSuchElementException {
+		Turn turn;
+		try {
+			turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD))
+					.skip(1).findFirst().get();
+		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no next turn to be attended."); }
+		return turn;
 	}
 	
 	/**
