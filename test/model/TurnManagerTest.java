@@ -94,12 +94,13 @@ public class TurnManagerTest {
 	public void threeUsrsSetup() {
 		this.manager = new TurnsManager();
 		ArrayList<User> usrs = new ArrayList<User>();
-		User seyerman = new User("Melchor Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
+		User seyerman = new User("Juancho Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
 		User elMonitorMasBuenaGenteDelMundo = new User("Daniel", "Nose Nose", "124", User.IC, "421", "", null);
 		User elonMuskElMasCrack = new User("Elon", "Musk", "125", "FI", "422", "Cra 107 # 121-20 Desepaz borough", 
-								  new Turn(manager.generateNextTurnId(manager.lastTurn), null));
+								  new Turn(manager.generateNextTurnId(manager.lastTurn.getId()), null));
 		this.turns = new ArrayList<Turn>();
 		elonMuskElMasCrack.getTurn().setUser(elonMuskElMasCrack);
+		manager.setLastTurn( elonMuskElMasCrack.getTurn() );
 		turns.add(elonMuskElMasCrack.getTurn());
 		usrs.add(seyerman);
 		usrs.add(elMonitorMasBuenaGenteDelMundo);
@@ -117,13 +118,20 @@ public class TurnManagerTest {
 			░░░██║░░░███████╗██████╔╝░░░██║░░░  ╚█████╔╝██║░░██║██████╔╝███████╗██████╔╝
 			░░░╚═╝░░░╚══════╝╚═════╝░░░░╚═╝░░░  ░╚════╝░╚═╝░░╚═╝╚═════╝░╚══════╝╚═════╝░
 */
-	
-	// ------------------------------------------------------------------------------------------------
-	// 		Test cases for Adding functional requirement.
-	// ------------------------------------------------------------------------------------------------
+
+	/**
+	 * Test cases for sign up functionality
+	 * Verify the correct behavior of addUser(String, String, String, String, String, String, User) method when:
+	 * 		User to be added have not been registered yet.
+	 * 		User to be added have already been registered.
+	 * 		Required fields are blank (i.e. when name, surnames, id, and type of document parameters are passed as empty Strings).
+	 * 		Alphabetic fields not only contains alphabetic characters
+	 * 		Numeric fields not only contains numeric characters
+
+	 */
 	@Test
 	public void testAddingWhenUserDoesNotExists() {
-		emptyObjsSetup();
+		emptyObjsSetup();	
 		names = "Sebastian"; surnames="Garcia Acosta"; id="123456"; typeOfDocument=User.IC; cellphoneNumber=""; address=""; turn = null;
 		User usr = new User(names, surnames, id, typeOfDocument, cellphoneNumber, address, turn);
 		try {
@@ -141,7 +149,7 @@ public class TurnManagerTest {
 		exceptionRule.expectMessage("User with id 123 is already registered.");
 		
 		try {
-			manager.addUser("Melchor Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
+			manager.addUser("Juancho Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
 		} catch (BlankRequiredFieldException e) {
 			fail("App should not throw this exception: fields are valid.");
 		}	
@@ -153,7 +161,7 @@ public class TurnManagerTest {
 		String expectedMsg = "Parameters: names, document number, surnames, type of document must be filled.";
 		boolean testPassed = false;
 		try {
-			manager.addUser("", "", "", "", "", "", null);
+			manager.addUser("", "", "", "", "123", "Cra 8 #23-12", null);
 			fail("Adding method should not allow adding user with blank required fields.");
 		} catch (UserAlreadyRegisteredException | InvalidInputException e) {
 			fail("This should not be the exceptions thrown in this case.");
@@ -191,47 +199,22 @@ public class TurnManagerTest {
 	// Test cases for searching method
 	// ------------------------------------------------------------------------------------------------
 	@Test
-	public void testSearchWhenThereAreNoUsers() {
+	public void testSearchWhenThereAreNoUsersNorTurns() {
 		emptyObjsSetup();
 		assertEquals("Searching method does not work when searching non-existing user", null, manager.searchUser("36378532"));
+		assertEquals("Searching method does not work when searching non-existing user", null, manager.searchTurn("A00"));
 	}
 	
 	@Test
-	public void testSearchExistingUser() {
+	public void testSearchExistingUsersAndTurns() {
 		threeUsrsSetup();
-		assertEquals("Search method does not work when searching existing user.", "123", manager.searchUser("123").getId());
+		assertEquals("Search method does not work when searching existing user.", manager.getUsers().get(2), manager.searchUser("125"));
+		assertEquals("Searching method turn is not working properly", manager.getTurns().get(0) ,manager.searchTurn("A00")); 
 	}
-	
+		
 	// ------------------------------------------------------------------------------------------------
 	// Test cases for registering turn method
 	// ------------------------------------------------------------------------------------------------
-	@Test	
-	public void testRegisteringTurnToUserThatDoesNotHaveOne() {
-		threeUsrsSetup();
-		try {
-			manager.registerTurn("123");
-		} catch (UserNotFoundException e) {
-			fail("App is not able to found created user.");
-		} catch (UserAlreadyHasATurnException e) {
-			fail("App is overriding user's turn.");
-		}
-		assertEquals("App is not assgining right initial turn.", "A00", manager.searchUser("123").getTurn().getId());
-	}
-	
-	@Test
-	public void testRegisteringTurnToUserThatAlreadyHaveOne()  throws UserAlreadyHasATurnException {
-		threeUsrsSetup();
-		exceptionRule.expect(UserAlreadyHasATurnException.class);
-		String expectedMsg = "User with id " + 125 + " already has turn " 
-				  + "A00" + " assgined and its state is: " + Turn.ON_HOLD;
-		exceptionRule.expectMessage(expectedMsg);
-		try {
-			manager.registerTurn("125");
-		} catch (UserNotFoundException e) {
-			fail("UserNotFoundException should not be thrown when trying to register some turn to another user.");
-		} 
-	}
-		
 	@Test
 	public void testTurnIdGeneration() {
 		emptyObjsSetup();
@@ -253,8 +236,35 @@ public class TurnManagerTest {
 			previuosTurnId = allPossibleCombinationsOfTurns[i];
 			idxOfNextElementInArr = ( (i == n-1) ? (i%(n-1)) : i+1 );
 			subsequentTurnId = allPossibleCombinationsOfTurns[ idxOfNextElementInArr ];
-			assertEquals("App is not generating subsequent turn id code.", subsequentTurnId, manager.generateNextTurnId(new Turn(previuosTurnId, null)));
+			assertEquals("App is not generating subsequent turn id code.", subsequentTurnId, manager.generateNextTurnId(previuosTurnId));
 		}
+	}
+	
+	@Test		
+	public void testRegisteringTurnToUserThatDoesNotHaveOne() {
+		threeUsrsSetup();
+		try { 
+			manager.registerTurn("123");
+		} catch (UserNotFoundException e) {
+			fail("App is not able to found created user.");
+		} catch (UserAlreadyHasATurnException e) {
+			fail("App is overwriting user's turn.");
+		}
+		assertEquals("App is not assgining right initial turn.", "A01", manager.searchUser("123").getTurn().getId());
+	}
+	
+	@Test
+	public void testRegisteringTurnToUserThatAlreadyHaveOne()  throws UserAlreadyHasATurnException {
+		threeUsrsSetup();
+		exceptionRule.expect(UserAlreadyHasATurnException.class);
+		String expectedMsg = "User with id " + 125 + " already has turn " 
+				  + "A00" + " assgined and its state is: " + Turn.ON_HOLD;
+		exceptionRule.expectMessage(expectedMsg);
+		try {
+			manager.registerTurn("125");
+		} catch (UserNotFoundException e) {
+			fail("UserNotFoundException should not be thrown when trying to register some turn to another user.");
+		} 
 	}
 	
 	// ------------------------------------------------------------------------------------------------
@@ -263,7 +273,6 @@ public class TurnManagerTest {
 	@Test
 	public void testAttendTurnWhenThereAreMoreToAttend() {
 		emptyObjsSetup();
-		
 		try {
 			manager.addUser("Primero", "Alguien", "123", User.IC, "", "", null);
 			manager.addUser("Segundo", "Alguien", "234", User.CC, "", "", null);
@@ -283,27 +292,26 @@ public class TurnManagerTest {
 		} catch (UserAlreadyHasATurnException e) {
 			fail("Turn is assgined to turn aribtrarly.");
 		}
-		
-		assertEquals("Turn not added correctly", "A00", manager.searchUser("123").getTurn().getId());
-		assertEquals("Turn not added correctly", "A01", manager.searchUser("234").getTurn().getId());
-		assertEquals("App is not able to keep track of current turn to be attended","A00" , manager.getCurrentTurn().getId());
+			
+		assertEquals("App is not able to keep track of current turn to be attended", "A00" , manager.getCurrentTurn().getId());
 		assertEquals("App is not allowing to consult to the next turn to be attended", "A01", manager.consultNextTurnToBeAttended().getId());
 		
 		// Attend another Turn that is not the current. So that only remains A00 to be attended.
 		 manager.dispatchTurn(manager.searchTurn("A01"), Turn.ATTENDED);
-		 try {
+		 try {	
 			 manager.consultNextTurnToBeAttended();
 			 fail("This should throw an exception");
 		 } catch(NoSuchElementException e) {
 			 assertTrue("App is not consulting the next correctly", "There are no next turn to be attended." == e.getMessage());
 		 }
 		 
+		 // Attend remaining turns
 		 manager.dispatchTurn(manager.searchTurn("A00"), Turn.USER_NOT_PRESENT);
 		 
 		 try {
 			manager.getCurrentTurn(); 
 		 } catch(NoSuchElementException e) {
-			 assertTrue("App is not responding preperly", "There are not turns in 'On hold' state." == e.getMessage());
+			 assertTrue("App is not responding preperly", "There are no turns in 'On hold' state." == e.getMessage());
 		 }
 	}
 	

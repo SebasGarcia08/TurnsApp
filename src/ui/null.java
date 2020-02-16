@@ -137,7 +137,7 @@ public class Main {
 
 			case 2:
 				println("\n[TURN REGISTRATION]");
-				print("\tThe next available turn is " + manager.generateNextTurnId(manager.lastTurn.getId())
+				print("\tThe next available turn is " + manager.generateNextTurnId(manager.lastTurn)
 						+ ". Do you want to assign it to some user? [y/n]: ");
 				String y_n = "";
 				try { y_n = String.valueOf(sc.readLine().charAt(0)); }
@@ -199,8 +199,7 @@ public class Main {
 						case 2:
 							manager.dispatchTurn(turnToBeAttended, Turn.USER_NOT_PRESENT);
 							break;
-						case 3:
-							election=3;
+						case 3:	
 							break;
 						default:
 							println("Invalid choice");

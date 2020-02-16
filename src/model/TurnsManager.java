@@ -174,7 +174,7 @@ public class TurnsManager {
 		if(usr == null) 				throw new UserNotFoundException(id);
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
-			Turn turn = new Turn(generateNextTurnId(lastTurn), usr);
+			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr);
 			usr.setTurn(turn);
 			turns.add(turn);
 			lastTurn.setId(turn.getId());
@@ -187,8 +187,7 @@ public class TurnsManager {
 	 * E.g. if currentTurn was A0, next turn will be A1; if currentTurn was Z99, next turn will be A00.
 	 * @return String, id of the next turn. Its first character is a letter and the rest are numbers.
 	 */
-	public String generateNextTurnId(Turn currentTurn) {
-		String currTurnId = currentTurn.getId();
+	public String generateNextTurnId(String currTurnId) {
 		char letter = currTurnId.charAt(0);
 		int number = Integer.parseInt(currTurnId.substring(1, currTurnId.length()));
 		int ASCIICurrLetter = (int) letter;
@@ -233,7 +232,7 @@ public class TurnsManager {
 		Turn curr_turn;
 		try {
 			curr_turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD)).findFirst().get();
-		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are not turns in 'On hold' state."); }
+		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no turns in 'On hold' state."); }
 		return curr_turn;
 	}
 	
