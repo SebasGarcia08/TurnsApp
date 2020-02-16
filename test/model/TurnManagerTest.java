@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -137,7 +138,7 @@ public class TurnManagerTest {
 	public void testNotAddingDuplicatedUser() {
 		threeUsrsSetup();
 		exceptionRule.expect(UserAlreadyRegisteredException.class);
-		exceptionRule.expectMessage("User with id 123 is already registered, cannot overwrite information");
+		exceptionRule.expectMessage("User with id 123 is already registered.");
 		
 		try {
 			manager.addUser("Melchor Manuel", "Reyes Garcia", "123", User.CC, "321", "", null);
@@ -261,15 +262,49 @@ public class TurnManagerTest {
 	// ------------------------------------------------------------------------------------------------
 	@Test
 	public void testAttendTurnWhenThereAreMoreToAttend() {
-		threeUsrsSetup();
+		emptyObjsSetup();
+		
 		try {
-			manager.registerTurn("124");
+			manager.addUser("Primero", "Alguien", "123", User.IC, "", "", null);
+			manager.addUser("Segundo", "Alguien", "234", User.CC, "", "", null);
+		} catch (UserAlreadyRegisteredException e1) {
+			fail("Exception shouldn't be thrown: valid fields and no duplicate user");
+		} catch (InvalidInputException e1) {
+			fail("Inputs are valid");
+		}catch (BlankRequiredFieldException e1) {
+			fail("No reqired field is blank");
+		}
+		
+		try {
+			manager.registerTurn("123");
+			manager.registerTurn("234");
 		} catch (UserNotFoundException e) {
 			fail("User is not saved.");
 		} catch (UserAlreadyHasATurnException e) {
 			fail("Turn is assgined to turn aribtrarly.");
 		}
-		assertEquals("App is not able to keep track of current turn to be attended","A00",manager.getCurrentTurn().getId());
+		
+		assertEquals("Turn not added correctly", "A00", manager.searchUser("123").getTurn().getId());
+		assertEquals("Turn not added correctly", "A01", manager.searchUser("234").getTurn().getId());
+		assertEquals("App is not able to keep track of current turn to be attended","A00" , manager.getCurrentTurn().getId());
+		assertEquals("App is not allowing to consult to the next turn to be attended", "A01", manager.consultNextTurnToBeAttended().getId());
+		
+		// Attend another Turn that is not the current. So that only remains A00 to be attended.
+		 manager.dispatchTurn(manager.searchTurn("A01"), Turn.ATTENDED);
+		 try {
+			 manager.consultNextTurnToBeAttended();
+			 fail("This should throw an exception");
+		 } catch(NoSuchElementException e) {
+			 assertTrue("App is not consulting the next correctly", "There are no next turn to be attended." == e.getMessage());
+		 }
+		 
+		 manager.dispatchTurn(manager.searchTurn("A00"), Turn.USER_NOT_PRESENT);
+		 
+		 try {
+			manager.getCurrentTurn(); 
+		 } catch(NoSuchElementException e) {
+			 assertTrue("App is not responding preperly", "There are not turns in 'On hold' state." == e.getMessage());
+		 }
 	}
 	
 }

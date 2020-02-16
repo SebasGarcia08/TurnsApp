@@ -219,7 +219,7 @@ public class TurnsManager {
 		Turn turn;
 		try {
 			turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD))
-					.skip(1).findFirst().get();
+					.skip(1).findAny().get();
 		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no next turn to be attended."); }
 		return turn;
 	}
@@ -233,7 +233,7 @@ public class TurnsManager {
 		Turn curr_turn;
 		try {
 			curr_turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD)).findFirst().get();
-		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no turns registered yet."); }
+		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are not turns in 'On hold' state."); }
 		return curr_turn;
 	}
 	

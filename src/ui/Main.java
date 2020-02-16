@@ -174,7 +174,8 @@ public class Main {
 						turnToBeAttended = manager.getCurrentTurn();
 						break;
 					case 2:
-						print("Type the id of Turn that you want to attend: ");
+						manager.consultNextTurnToBeAttended().getId();
+						print("\t\t\tType the id of Turn that you want to attend: ");
 						String idSearched = sc.readLine();
 						turnToBeAttended = manager.searchTurn(idSearched);
 						break;
@@ -188,7 +189,7 @@ public class Main {
 					print("\t\t\tChoose the attention state:\n" + 
 						    "\t\t\t" + "\t1) Dispatch as: Attended\n"+ 
 						    "\t\t\t" + "\t2) Dispatch as: User not present\n"+
-						    "\t\t\t" + "\t3) Go back to main menu\n"+ 
+						    "\t\t\t" + "\t3) Go back\n"+ 
 						    "\t\t\tAnswer[1-3]: ");
 					int res = Integer.parseInt(sc.readLine());
 						switch (res) {

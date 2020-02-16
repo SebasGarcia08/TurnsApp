@@ -14,6 +14,6 @@ public class UserAlreadyRegisteredException extends IllegalArgumentException {
 	 * @param id, String.
 	 */
 	public UserAlreadyRegisteredException(String id) {
-		super("User with id "+ id +" is already registered, cannot overwrite information");
+		super("User with id "+ id +" is already registered.");
 	}
 }
