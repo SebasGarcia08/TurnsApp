@@ -1,12 +1,18 @@
 package model;
 
+import java.io.Serializable;
+
 /**
  * This class models the Turn entity.
  * @author Sebastián Garcia Acosta
  *
  */
-public class Turn {
+public class Turn implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	// ------------------------------------------------------------------------------------------------
 	// Constants
 	// ------------------------------------------------------------------------------------------------	
@@ -20,6 +26,7 @@ public class Turn {
 	private String state;
 	private String id;
 	private User user;
+	private TurnType turnTpye;
 
 	// ------------------------------------------------------------------------------------------------
 	// Constructor
@@ -85,9 +92,5 @@ public class Turn {
 	 */
 	public void setState(String state) {
 		this.state = state;
-	}
-	
-	public boolean equals(Turn obj) {
-		return (this.id.equalsIgnoreCase(obj.getId()));
 	}
 }

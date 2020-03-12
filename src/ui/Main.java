@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import model.*;
@@ -52,7 +53,7 @@ public class Main {
 							"█▄█ ░█░ ▄   \n";
 		
 		String authority = "█▀ █▀▀ █▄▄ ▄▀█ █▀ ▀█▀ █ ▄▀█ █▄░█   █▀▀ ▄▀█ █▀█ █▀▀ █ ▄▀█   ▄▀█ █▀▀ █▀█ █▀ ▀█▀ ▄▀█\n"+
-						  "▄█ ██▄ █▄█ █▀█ ▄█ ░█░ █ █▀█ █░▀█   █▄█ █▀█ █▀▄ █▄▄ █ █▀█   █▀█ █▄▄ █▄█ ▄█ ░█░ █▀█\n";
+						   "▄█ ██▄ █▄█ █▀█ ▄█ ░█░ █ █▀█ █░▀█   █▄█ █▀█ █▀▄ █▄▄ █ █▀█   █▀█ █▄▄ █▄█ ▄█ ░█░ █▀█\n";
 		
 		int indentationLevels = 5;
 				
@@ -85,8 +86,12 @@ public class Main {
 		));
 		
 		int election = 0;
+		long start;
+		long end;
+		manager.generateRandomSurnames(100).forEach(System.out::println);
 		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4).Exit";
 		while (election != 4) {
+			start = System.currentTimeMillis();
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
 			try {
 				election = Integer.parseInt(sc.readLine());
@@ -221,6 +226,11 @@ public class Main {
 				println("Invalid choice.");
 				break;
 			}
+			end = System.currentTimeMillis();
+			long opDuration = end - start;
+			System.out.println("Time it took: (millseg)" + opDuration);
+			String opTime = TimeUnit.MILLISECONDS.toHours(opDuration) + " " + TimeUnit.MILLISECONDS.toMinutes(opDuration) + " " + TimeUnit.MILLISECONDS.toSeconds(opDuration);
+			System.out.println(opTime);
 		}
 	}
 

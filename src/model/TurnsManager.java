@@ -1,21 +1,32 @@
 package model;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import CustomExceptions.*;
 
 /**
  * This class represents the turns handler and is in charge of the logic of the problem.
  * For more details about the context of the problem and the problem itself, got to: 
- * https://docs.google.com/document/d/1B5HBI3Hz4JossDKzX5d2sSnTj3zOvktyk7KiiJ_dFsY/edit
+ * https://docs.google.com/document/d/1d--ndivkbnoNeZ0nUT8eUpYm-FtVlvE13vZZVe3kn4g/edit?usp=sharing
  * @author Sebastián García Acosta
  *
  */
-public class TurnsManager {
+public class TurnsManager implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	// ------------------------------------------------------------------------------------------------
 	// Attributes
@@ -33,6 +44,9 @@ public class TurnsManager {
 	 */
 	private ArrayList<Turn> turns;
 	
+	private Date date;
+	private Time time;
+	
 	/**
 	 * Turn, this attribute is used to indicate what is the last turn assigned. Next turns assigned will be based on this.
 	 */
@@ -42,6 +56,24 @@ public class TurnsManager {
 	 * This final array is used to indicate the required fields needed to register a user. 
 	 */
 	public static final String[] REQUIRED_FIELDS = {"names", "surnames", "type of document", "document number"};
+	
+	/**
+	 * This constant indicates the maximum number of names allocated within the data folder.
+	 */
+	public static final int LENGTH_OF_NAMES_AND_SURNAMES_FILE = 999;
+	public static final String NAMES_FILE_PATH = "data/names.txt";
+	public static final String SURNAMES_FILE_PATH = "data/surnames.txt";
+	
+	/**
+	 * This ArrayList will be filled once and only once with the names inside NAMES_FILE_PATH
+	 */
+	public static ArrayList<String> NAMES = new ArrayList<String>();
+	
+	/**
+	 * This ArrayList will be filled once and only once with the surnames inside SURNAMES_FILE_PATH
+	 */
+	public static ArrayList<String> SURNAMES = new ArrayList<String>();
+	public static final float  CHANGE_TIME_DURATION = (float) 0.25;
 
 	// ------------------------------------------------------------------------------------------------
 	// Constructors
@@ -51,7 +83,10 @@ public class TurnsManager {
 	 * Creates an TurnsManager object
 	 * <b>post: </b> a TurnsManager object was created and its attributes were initialized. 
 	 */
-	public TurnsManager() {
+	public TurnsManager() {	
+		LocalDateTime initialDateTime = LocalDateTime.now();
+		this.date = new Date(initialDateTime.getDayOfMonth(), initialDateTime.getMonthValue(), initialDateTime.getYear());
+		this.time = new Time(initialDateTime.getHour(), initialDateTime.getMinute(), initialDateTime.getSecond());
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
 		this.lastTurn = new Turn("A-1", null);
@@ -91,7 +126,7 @@ public class TurnsManager {
 											.collect( Collectors.toMap(i -> REQUIRED_FIELDS[i], i -> required_args[i]));
 		
 		ArrayList<String> blankFieldsList = requiredFields.entrySet().stream()
-										.filter(item -> item.getValue().isBlank())
+										.filter(item -> (item.getValue().trim().length() == 0 || item.getValue() == null ))
 										.map(Map.Entry::getKey)
 										.collect(Collectors.toCollection(ArrayList::new));
 		
@@ -119,7 +154,7 @@ public class TurnsManager {
 		// ------------------------------------------------------------------------------------------------
 		ArrayList<String> invalidNumericFields = new ArrayList<String>();
 		if (!id.matches("\\d+")) invalidNumericFields.add("document number");
-		if (!cpn.isBlank() && !cpn.matches("\\d+")) invalidNumericFields.add("cellphone number");
+		if ( ! (cpn.trim().length() == 0 || cpn == null) && !cpn.matches("\\d+")) invalidNumericFields.add("cellphone number");
 		
 		if(!invalidNumericFields.isEmpty()) throw new InvalidInputException(invalidNumericFields, "numerical characters");
 		users.add(new User(n, s, id, tod, cpn, a, t));
@@ -234,6 +269,94 @@ public class TurnsManager {
 			curr_turn = turns.stream().filter(obj -> obj.getState().contentEquals(Turn.ON_HOLD)).findFirst().get();
 		} catch(NoSuchElementException e) { throw new NoSuchElementException("There are no turns in 'On hold' state."); }
 		return curr_turn;
+	}
+	
+	/**
+	 * Generates up to 1000² unique random names based on the ones hosted in /data folder.
+	 * @param number, number of random composed names to be created.
+	 * @return ArrayList<String> that contains the random names generated. Its size is number - 1.
+	 * @throws IOException, if file archive could not be loaded.
+	 */
+	public ArrayList<String> generateRandomComposedNames(int number) throws IOException{
+		ArrayList<String> composedNames = new ArrayList<String>();
+		loadSurnames();
+		for(int i = 0; i < number; i++) {
+			int randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+			int randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+			
+			while(randomIdx1 == randomIdx2) {
+				randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+				randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);	
+			}
+			
+			String name1 = NAMES.get(randomIdx1);
+			String name2 = NAMES.get(randomIdx2);
+			String composedName = name1 + " " + name2;
+			composedNames.add( composedName );
+		}
+		return composedNames;
+	} 
+	
+	/**
+	 * Generates up to 1000 unique random surnames based on the ones hosted in /data folder.
+	 * @param number, number of random surnames to be created.
+	 * @return ArrayList<String> that contains the random names generated. Its size is number - 1.
+	 * @throws IOException, if file archive could not be loaded.
+	 */
+	public ArrayList<String> generateRandomSurnames(int number) throws IOException{
+		ArrayList<String> surnames = new ArrayList<String>();
+		loadSurnames();
+		for(int i = 0; i < number; i++) {
+			int randomIdx = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+			String surname = SURNAMES.get(randomIdx);
+			surnames.add( surname );
+		}
+		return surnames;
+	} 
+	
+	/**
+	 * Stores the names allocated in names.txt file into NAMES array for later using if and only if NAMES array is empty.
+	 * <b>post: </b> This method will be executed only once in the lifetime of the program.
+	 * @throws IOException
+	 */
+	public void loadNames() throws IOException {
+		BufferedReader br = new BufferedReader( new FileReader( new File( NAMES_FILE_PATH )));
+		String s;
+		if(NAMES.isEmpty()) 
+			while( (s = br.readLine()) != null ) 
+				NAMES.add(s);			
+		
+		br.close();
+	}
+	
+	/**
+	 * Stores the names allocated in surnames.txt file into SURNAMES array for later using if and only if SURNAMES array is empty.
+	 * <b>post: </b> This method will be executed only once in the lifetime of the program.
+	 * @throws IOException
+	 */
+	public void loadSurnames() throws IOException {
+		BufferedReader br = new BufferedReader( new FileReader( new File( SURNAMES_FILE_PATH )));
+		String s;
+		if(SURNAMES.isEmpty()) 
+			while( (s = br.readLine()) != null ) 
+				SURNAMES.add(s);			
+		
+		br.close();
+	}
+	
+	public String getDateTime() {
+		return date.toString() + " " + time.toString();
+	}
+	
+	public void updateDateTime(long milliseconds) {
+		int accHours = (int) (time.getHours() + TimeUnit.MILLISECONDS.toHours(milliseconds));
+		int accMins = (int) ( time.getMinutes() + TimeUnit.MILLISECONDS.toMinutes(milliseconds));
+		int accSec = (int) ( time.getSeconds() +  TimeUnit.MILLISECONDS.toSeconds(milliseconds));
+		
+		if(accHours > 24) {
+			int newDays = accHours/24;
+			int newHours = accHours%24;
+		}
 	}
 	
 	// ------------------------------------------------------------------------------------------------
