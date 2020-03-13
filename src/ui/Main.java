@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import model.*;
@@ -88,8 +87,8 @@ public class Main {
 		int election = 0;
 		long start;
 		long end;
-		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4) Update date\n\t5).Exit";
-		int exit = 5;
+		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4).Update date\n\t5).Show time\n\t6).Exit";
+		int exit = 6;
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
 			try {
@@ -241,6 +240,11 @@ public class Main {
 				}
 				break;
 			case 5:
+				manager.updateDateTimeByMillis(System.currentTimeMillis() - start);
+				start = System.currentTimeMillis();
+				System.out.println("\tCURRENT SYSTEM TIME " + manager.sendDateTime());
+				break;
+			case 6:
 				println("Goodbye!");
 				sc.close();
 			break;

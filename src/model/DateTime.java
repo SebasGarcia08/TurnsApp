@@ -125,6 +125,15 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 		} else { this.year = actualYear; }*/
 	}
 	
+	public static DateTime now() {
+		return new DateTime(LocalDateTime.now().getYear(), 
+				LocalDateTime.now().getMonthValue(), 
+				LocalDateTime.now().getDayOfMonth(), 
+				LocalDateTime.now().getHour(), 
+				LocalDateTime.now().getMinute(), 
+				LocalDateTime.now().getSecond());
+	}
+	
 	public LocalDateTime toLocalDateTime() {
 		return LocalDateTime.of(year, month, day, hours, minutes, seconds);
 	}

@@ -2,12 +2,12 @@ package model;
 
 public class TurnType {
 	private String name;
-	private float duration;
+	private float durationMinutes;
+	private DateTime dt;
 	
 	public TurnType(String name, float duration) {
-		super();
 		this.name = name;
-		this.duration = duration;
+		this.durationMinutes = duration;
 	}
 
 	public String getName() {
@@ -19,11 +19,11 @@ public class TurnType {
 	}
 
 	public float getDuration() {
-		return duration;
+		return durationMinutes;
 	}
 
 	public void setDuration(float duration) {
-		this.duration = duration;
+		this.durationMinutes = duration;
 	}
 	
 }

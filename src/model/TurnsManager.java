@@ -83,12 +83,7 @@ public class TurnsManager implements Serializable{
 	 * <b>post: </b> a TurnsManager object was created and its attributes were initialized. 
 	 */
 	public TurnsManager() {	
-		this.dateTime = new DateTime(LocalDateTime.now().getYear(), 
-									LocalDateTime.now().getMonthValue(), 
-									LocalDateTime.now().getDayOfMonth(), 
-									LocalDateTime.now().getHour(), 
-									LocalDateTime.now().getMinute(), 
-									LocalDateTime.now().getSecond());
+		this.dateTime = DateTime.now();
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
 		this.lastTurn = new Turn("A-1", null, null);
@@ -380,12 +375,7 @@ public class TurnsManager implements Serializable{
 	}
 	
 	public void updateDateTimeBySystem() {
-		this.dateTime = new DateTime(LocalDateTime.now().getYear(), 
-				LocalDateTime.now().getMonthValue(), 
-				LocalDateTime.now().getDayOfMonth(), 
-				LocalDateTime.now().getHour(), 
-				LocalDateTime.now().getMinute(), 
-				LocalDateTime.now().getSecond());
+		this.dateTime = DateTime.now();
 	}
 	
 	// ------------------------------------------------------------------------------------------------
