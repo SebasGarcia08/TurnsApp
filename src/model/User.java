@@ -34,6 +34,7 @@ public class User implements Serializable{
 	private String cellphoneNumber;
 	private String address;
 	private Turn turn;
+	private boolean suspended;
 
 	/**
 	 * Creates an User object.
@@ -52,6 +53,11 @@ public class User implements Serializable{
 		this.cellphoneNumber = cpn;
 		this.address = a;
 		this.turn = t;
+		this.suspended = false;
+	}
+	
+	public void suspend() {
+		this.suspended = true;
 	}
 
 	/**

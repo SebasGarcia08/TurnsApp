@@ -36,10 +36,19 @@ public class Turn implements Serializable {
 	 * @param id, String.
 	 * @param usr, User.
 	 */
-	public Turn(String id, User usr) {
+	public Turn(String id, User usr, TurnType tt) {
 		this.id = id;
 		this.state = ON_HOLD;
 		this.user = usr;
+		this.turnTpye = tt;
+	}
+
+	public TurnType getTurnTpye() {
+		return turnTpye;
+	}
+
+	public void setTurnTpye(TurnType turnTpye) {
+		this.turnTpye = turnTpye;
 	}
 
 	/**

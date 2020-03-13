@@ -88,10 +88,9 @@ public class Main {
 		int election = 0;
 		long start;
 		long end;
-		manager.generateRandomSurnames(100).forEach(System.out::println);
-		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4).Exit";
-		while (election != 4) {
-			start = System.currentTimeMillis();
+		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4) Update date\n\t5).Exit";
+		int exit = 5;
+		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
 			try {
 				election = Integer.parseInt(sc.readLine());
@@ -138,8 +137,7 @@ public class Main {
 						println(FAILED_OP);
 						break;
 					}
-				break;
-
+			break;
 			case 2:
 				println("\n[TURN REGISTRATION]");
 				print("\tThe next available turn is " + manager.generateNextTurnId(manager.lastTurn.getId())
@@ -151,8 +149,12 @@ public class Main {
 				else if (y_n.equalsIgnoreCase("y")) {
 					print("\tWrite the id of the user: ");
 					String id_ = sc.readLine();
+					print("\tType the name of the turn type");
+					String ttname = sc.readLine();							
 					try {
-						manager.registerTurn(id_);
+						print("\tType the duration of the turn: ");
+						int ttduration = Integer.parseInt(sc.readLine());
+						manager.registerTurn(id_, ttname, ttduration);
 						println(SUCCESS_OP);
 					} catch (UserAlreadyHasATurnException | UserNotFoundException e) {
 						println(e.getMessage());
@@ -160,7 +162,7 @@ public class Main {
 					}
 				} else
 					println("Invalid choice. Possible answers are 'y' (yes) or 'n' (no)");
-				break;
+			break;
 			case 3:
 				try {
 					println("\n[ATTEND TURN]");
@@ -217,20 +219,40 @@ public class Main {
 					println(e.getMessage());
 					println(FAILED_OP);
 				}
-				break;
+			break;
 			case 4:
+				print("\tChoose: \n\t[1] Update datetime taking with computer system datetime.\n\t[2] Update datetime manually\n\t[Any] Go back\n\t[Answer]: ");
+				try {
+					String res = sc.readLine();
+					switch(res) {
+						case "1": 
+							manager.updateDateTimeBySystem();
+							break;
+						case "2":
+							print("\t\tWrite the datetime you will update the system (with format YYYY-MM-DD hh:mm:ss). E,g. 2025-12-31 23:59:55: ");
+							String strDate = sc.readLine();
+							manager.updateDateTimeManually(strDate);
+							break;
+						default:
+							break;
+					}
+				}catch(Exception e) {
+					println(e.getMessage());
+				}
+				break;
+			case 5:
 				println("Goodbye!");
 				sc.close();
-				break;
+			break;
 			default:
 				println("Invalid choice.");
-				break;
+			break;
 			}
 			end = System.currentTimeMillis();
-			long opDuration = end - start;
-			System.out.println("Time it took: (millseg)" + opDuration);
-			String opTime = TimeUnit.MILLISECONDS.toHours(opDuration) + " " + TimeUnit.MILLISECONDS.toMinutes(opDuration) + " " + TimeUnit.MILLISECONDS.toSeconds(opDuration);
-			System.out.println(opTime);
+			long opDurationMenu = end - start;
+			System.out.println("Time it took: (ms) " + opDurationMenu);
+			manager.updateDateTimeByMillis(System.currentTimeMillis() - start);
+			System.out.println("Actual time: " + manager.sendDateTime());
 		}
 	}
 
@@ -251,5 +273,4 @@ public class Main {
 	public static void println(String s) {
 		System.out.println(s);
 	}
-
 }

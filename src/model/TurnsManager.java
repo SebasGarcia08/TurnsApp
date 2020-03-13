@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import CustomExceptions.*;
@@ -44,8 +44,7 @@ public class TurnsManager implements Serializable{
 	 */
 	private ArrayList<Turn> turns;
 	
-	private Date date;
-	private Time time;
+	private DateTime dateTime;
 	
 	/**
 	 * Turn, this attribute is used to indicate what is the last turn assigned. Next turns assigned will be based on this.
@@ -84,12 +83,15 @@ public class TurnsManager implements Serializable{
 	 * <b>post: </b> a TurnsManager object was created and its attributes were initialized. 
 	 */
 	public TurnsManager() {	
-		LocalDateTime initialDateTime = LocalDateTime.now();
-		this.date = new Date(initialDateTime.getDayOfMonth(), initialDateTime.getMonthValue(), initialDateTime.getYear());
-		this.time = new Time(initialDateTime.getHour(), initialDateTime.getMinute(), initialDateTime.getSecond());
+		this.dateTime = new DateTime(LocalDateTime.now().getYear(), 
+									LocalDateTime.now().getMonthValue(), 
+									LocalDateTime.now().getDayOfMonth(), 
+									LocalDateTime.now().getHour(), 
+									LocalDateTime.now().getMinute(), 
+									LocalDateTime.now().getSecond());
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
-		this.lastTurn = new Turn("A-1", null);
+		this.lastTurn = new Turn("A-1", null, null);
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -204,16 +206,20 @@ public class TurnsManager implements Serializable{
 	 * @throws UserNotFoundException if user with the specified id is not found.
 	 * @throws UserAlreadyHasATurnException, if user already has a turns assigned.
 	 */
-	public void registerTurn(String id) throws UserAlreadyHasATurnException, UserNotFoundException {
+	public void registerTurn(String id, String name, int duration) throws UserAlreadyHasATurnException, UserNotFoundException {
 		User usr = searchUser(id);
 		if(usr == null) 				throw new UserNotFoundException(id);
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
-			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr);
+			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, new TurnType(name, duration));
 			usr.setTurn(turn);
 			turns.add(turn);
 			lastTurn.setId(turn.getId());
 		}
+	}
+
+	public void setDateTime(DateTime dateTime) {
+		this.dateTime = dateTime;
 	}
 
 	/**
@@ -344,19 +350,42 @@ public class TurnsManager implements Serializable{
 		br.close();
 	}
 	
-	public String getDateTime() {
-		return date.toString() + " " + time.toString();
+	public String sendDateTime() {
+		return dateTime.toString();
 	}
 	
-	public void updateDateTime(long milliseconds) {
-		int accHours = (int) (time.getHours() + TimeUnit.MILLISECONDS.toHours(milliseconds));
-		int accMins = (int) ( time.getMinutes() + TimeUnit.MILLISECONDS.toMinutes(milliseconds));
-		int accSec = (int) ( time.getSeconds() +  TimeUnit.MILLISECONDS.toSeconds(milliseconds));
+	//TODO- Documentation
+	public DateTime getDateTime() {
+		return this.dateTime;
+	}
+	
+	public void updateDateTimeManually(String strDate) throws Exception {
+		strDate = strDate.trim();
+		String[] dateAndTime = strDate.split(" ");
+		// YY-MM-DD
+		int[] date = Arrays.stream(dateAndTime[0].split("-")).mapToInt(Integer::parseInt).toArray();
+		// hh:mm:ss
+		int[] time = Arrays.stream(dateAndTime[1].split(":")).mapToInt(Integer::parseInt).toArray();
 		
-		if(accHours > 24) {
-			int newDays = accHours/24;
-			int newHours = accHours%24;
-		}
+		DateTime dt = new DateTime(date[0], date[1], date[2], time[0], time[1], time[2]);
+
+		if( dt.isBefore(dt) )
+			throw new Exception("Invalid datetime");
+		else
+			this.dateTime = dt;
+	}
+	
+	public void updateDateTimeByMillis(long milliseconds) {
+		dateTime.plusMillis(milliseconds);
+	}
+	
+	public void updateDateTimeBySystem() {
+		this.dateTime = new DateTime(LocalDateTime.now().getYear(), 
+				LocalDateTime.now().getMonthValue(), 
+				LocalDateTime.now().getDayOfMonth(), 
+				LocalDateTime.now().getHour(), 
+				LocalDateTime.now().getMinute(), 
+				LocalDateTime.now().getSecond());
 	}
 	
 	// ------------------------------------------------------------------------------------------------
