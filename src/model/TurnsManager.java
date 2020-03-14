@@ -39,6 +39,13 @@ public class TurnsManager implements Serializable{
 	private ArrayList<User> users;
 	
 	/**
+	 * Number of integer places for codes generated. 
+	 * E.g., if numberOfPossibleDigits = 2, then the possible codes are 26 x 10!/(10 - 2) = 11793600 (11 million possible codes)
+	 */
+	public final static int EXPONENT_OF_POSSIBLE_NUMBER_OF_DIGITS = 2;
+	public static final long NUMBER_OF_POSSIBLE_IDS = 26 * (TurnsManager.factorial(10)/(10-EXPONENT_OF_POSSIBLE_NUMBER_OF_DIGITS));
+	
+	/**
 	 * ArrayList containing the turns registered. 
 	 * Its length could be longer than users ArrayList due to the fact that a user can have multiple turns throughout the
 	 * application life.  
@@ -96,6 +103,16 @@ public class TurnsManager implements Serializable{
 	// ------------------------------------------------------------------------------------------------
 	// Methods
 	// ------------------------------------------------------------------------------------------------
+	
+	public static long factorial(int number) {
+        long result = 1;
+
+        for (int factor = 2; factor <= number; factor++) {
+            result *= factor;
+        }
+
+        return result;
+    }
 
 	/**
 	 * Adds a user to the turns manager if and only if potential user's fields meet the following rules: <br>
@@ -275,17 +292,17 @@ public class TurnsManager implements Serializable{
 	 * @return String, table containing the information about the pending turns to be attended.
 	 */
 	public String sendTurnsQueue() {
-		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\tID\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
+		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
 		String res = header +"\n";
 		for( User u : users) {
 			if(u.getTurn() != null && u.getTurn().getState().equals(Turn.ON_HOLD)){
 				DateTime startingDateTime = DateTime.copyOf(u.getTurn().getStartingDateTime());
 				DateTime endingDateTime = DateTime.copyOf(startingDateTime);
 				endingDateTime.plusMillis(DateTime.minutes2Millis(u.getTurn().getTurnTpye().getDurationMinutes()));				
-				res += "\t\t"+u.getNames() + " " + u.getSurnames() +"\t\t"+u.getId()+"\t"+u.getTurn().getStartingDateTime()+"\t\t"+endingDateTime+"\n";
+				res += "\t\t"+u.getNames() + " " + u.getSurnames() +"\t\t"+u.getTurn().getId()+"\t"+u.getTurn().getStartingDateTime()+"\t\t"+endingDateTime+"\n";
 			}
 		}
-		if(res == (header + "\n"))
+		if(res.equals(header + "\n"))
 			res = "\tNo turns queued yet...";
 		return res;
 	}
@@ -309,22 +326,25 @@ public class TurnsManager implements Serializable{
 	}
 
 	/**
-	 * Generates next turn id ranging from A00 to Z99.
+	 * Generates next turn id ranging from A + 10!/(10 - 7) to Z + 10!/(10 - 7).
 	 * @param currentTurn, Turn, previous turn, based on this the next turn will be generated. 
 	 * E.g. if currentTurn was A0, next turn will be A1; if currentTurn was Z99, next turn will be A00.
 	 * @return String, id of the next turn. Its first character is a letter and the rest are numbers.
 	 */
-	public String generateNextTurnId(String currTurnId) {
+	public static String generateNextTurnId(String currTurnId) {
+		long numDigits = (long) Math.pow(10, EXPONENT_OF_POSSIBLE_NUMBER_OF_DIGITS);
 		char letter = currTurnId.charAt(0);
 		int number = Integer.parseInt(currTurnId.substring(1, currTurnId.length()));
 		int ASCIICurrLetter = (int) letter;
 		int nextASCIILetter = (ASCIICurrLetter == 90) ? 65 : ASCIICurrLetter+1;
-		int nextTurnNumber = (number < 99) ? number + 1 : 0;
-		char nextTurnLetter = (number < 99) ? letter : (char) nextASCIILetter;
-		String nextTurnId = String.valueOf(nextTurnLetter) + ((nextTurnNumber < 10) ? "0" + nextTurnNumber : String.valueOf(nextTurnNumber));
+		long nextTurnNumber = (long) ( (number < (numDigits - 1 ) ) ? number + 1 : 0);
+		int num_zeros = (int) (String.valueOf(numDigits).length() - String.valueOf(nextTurnNumber).length());
+		String zeros = new String(new char[num_zeros-1]).replace("\0", "0");
+		char nextTurnLetter = (number < (numDigits -1 ) ) ? letter : (char) nextASCIILetter;
+		String nextTurnId = nextTurnLetter + zeros + nextTurnNumber;
 		return nextTurnId;
 	}
-	
+
 	/**
 	 * Dispatches the current turn: sets the state of current turn to either ATTENDED or USER_NOT_PRESENT. 
 	 * @param state, String, possible values are: "Attended." or "User not present".
@@ -379,7 +399,7 @@ public class TurnsManager implements Serializable{
 	 */
 	public ArrayList<String> generateRandomComposedNames(int number) throws IOException{
 		ArrayList<String> composedNames = new ArrayList<String>();
-		loadSurnames();
+		loadNames();
 		for(int i = 0; i < number; i++) {
 			int randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
 			int randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
@@ -398,10 +418,28 @@ public class TurnsManager implements Serializable{
 	} 
 	
 	/**
-	 * Generates up to 1000 unique random surnames based on the ones hosted in /data folder.
-	 * @param number, number of random surnames to be created.
-	 * @return ArrayList<String> that contains the random names generated. Its size is number - 1.
-	 * @throws IOException, if file archive could not be loaded.
+	 * Generates a random composed name based on text files allocated in /data folder
+	 * @return String, composed random name.
+	 * @throws IOException 
+	 */
+	public String generateComposedRandomName() throws IOException {
+		loadNames();
+		int randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+		int randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+		
+		while(randomIdx1 == randomIdx2) {
+			randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+			randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);	
+		}
+		
+		String name1 = NAMES.get(randomIdx1);
+		String name2 = NAMES.get(randomIdx2);
+		return name1 + name2; 
+	}
+	
+	/**
+	 * Generates a random composed surname based on text files allocated in /data folder
+	 * @return String, composed random surname.
 	 */
 	public ArrayList<String> generateRandomSurnames(int number) throws IOException{
 		ArrayList<String> surnames = new ArrayList<String>();
@@ -413,6 +451,46 @@ public class TurnsManager implements Serializable{
 		}
 		return surnames;
 	} 
+	
+	/**
+	 * Generates a random composed surname based on text files allocated in /data folder
+	 * @return String, composed random name.
+	 */
+	public String generateRandomComposedSurnames() throws IOException{
+		loadSurnames();
+		int randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+		int randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+		
+		while(randomIdx1 == randomIdx2) {
+			randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
+			randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);	
+		}
+		
+		String name1 = SURNAMES.get(randomIdx1);
+		String name2 = SURNAMES.get(randomIdx2);
+		return name1 + name2; 
+	} 
+	
+	/**
+	 * Generates n number of users with random fields
+	 * @param numUsers int, number of users to generate.
+	 * @throws IOException
+	 */
+	public void generateRandomUsers(int numUsers) throws IOException {
+		for(int i=0; i < numUsers; i++) {
+			  String id = String.valueOf( (int) (Math.random() * NUMBER_OF_POSSIBLE_IDS));
+			  String name = generateComposedRandomName();
+			  String surnames = generateRandomComposedSurnames();
+			  int idxOfTod = (int) (Math.random() * User.TYPES_OF_DOCUMENTS.length);
+			  String tod = User.TYPES_OF_DOCUMENTS[idxOfTod];
+			  try {
+				addUser(name, surnames, id, tod, "", "", null);
+			} catch (UserAlreadyRegisteredException | InvalidInputException | BlankRequiredFieldException e) {
+				continue;
+			}
+		}
+		System.out.println(users.size());
+	}
 	
 	/**
 	 * Stores the names allocated in names.txt file into NAMES array for later using if and only if NAMES array is empty.

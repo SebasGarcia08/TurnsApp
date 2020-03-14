@@ -121,7 +121,7 @@ public class Main {
 		int election = 0;
 		long start;
 		long end;
-		int exit = 8;
+		int exit = 9;
 		String OPCIONES = "\n\t1).Add user " + 
 						  "\n\t2).Add turn type" +
 						  "\n\t3).Register turn"+
@@ -129,6 +129,7 @@ public class Main {
 						  "\n\t5).Update date"+
 						  "\n\t6).Show time"+
 						  "\n\t7).Summarize pending turns to be attended"+
+						  "\n\t8).Generate random users" +
 						  "\n\t"+ exit +").Exit";
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
@@ -277,6 +278,13 @@ public class Main {
 				 System.out.println(manager.sendTurnsQueue());
 				break;
 			case 8:
+				try {
+					manager.generateRandomUsers(Integer.parseInt(sc.readLine()));
+				}catch(NumberFormatException e) {
+					break;
+				}
+				break;
+			case 9:
 				System.out.println("[EXIT]");
 				System.out.print("Choose:\n\t" + 
 										"[1] Save changes\n\t"+ 
