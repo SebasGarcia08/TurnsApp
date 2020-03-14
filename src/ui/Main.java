@@ -1,20 +1,24 @@
 package ui;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
-
-import model.*;
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
 import CustomExceptions.UserNotFoundException;
-import CustomExceptions.InvalidInputException;;
+import CustomExceptions.InvalidInputException;
+import model.*;
 
 /**
  * Main class for TurnsApp
@@ -22,7 +26,6 @@ import CustomExceptions.InvalidInputException;;
  *
  */
 public class Main {
-	
 	/**
 	 * Main method.
 	 * @param args, String[].
@@ -30,9 +33,37 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		final String SUCCESS_OP = "[SUCCESSFUL OPERATION]";
 		final String FAILED_OP = "[FAILED OPERATION]";
+		final String PROGRAM_PATH = "data/PROGRAM.dat";
+		
 		TurnsManager manager = new TurnsManager();
 		BufferedReader sc = new BufferedReader(new InputStreamReader(System.in));
-		
+
+		// Deserialize manager obj
+		File serializedFile = new File(PROGRAM_PATH); 
+		if(serializedFile.exists()) {
+			System.out.print("Restore system state? [y = YES /<Any> = NO]: ");
+			String res = sc.readLine();
+			if(res.equals("y")) {
+				try {
+					System.out.println("Loading app...");
+					FileInputStream file = new FileInputStream(serializedFile);
+					ObjectInputStream in = new ObjectInputStream( file );
+					manager = (TurnsManager) in.readObject();
+					in.close();
+					file.close();
+					
+					System.out.print("Update system datetime to the current or leave it as it was saved? [u = UPDATE/ <Any>: NOT UPDATE]?: ");
+					if( sc.readLine().equals("u") ) {
+						manager.updateDateTimeBySystem();
+					}
+				}catch(IOException e) {
+					System.out.println(e.getMessage());
+				} catch (ClassNotFoundException e) {
+					System.out.println("An error ocurred");
+				}		
+			}		
+		}
+				
 		// Text art created at: https://fsymbols.com/text-art/
 
 		String welcomeTo = 	"░██╗░░░░░░░██╗███████╗██╗░░░░░░█████╗░░█████╗░███╗░░░███╗███████╗  ████████╗░█████╗░██╗\n"+
@@ -183,6 +214,7 @@ public class Main {
 							}
 						} catch(NumberFormatException e) {
 							System.out.println("Invalid input");
+							break;
 						}
 					}
 					try {
@@ -281,8 +313,43 @@ public class Main {
 				System.out.println("\tCURRENT SYSTEM TIME " + manager.sendDateTime());
 				break;
 			case 7:
-				println("Goodbye!");
-				sc.close();
+				System.out.println("[EXIT]");
+				System.out.print("Choose:\n\t" + 
+										"[1] Save changes\n\t"+ 
+										"[2] Exit without saving changes\n\t"+
+								 "Answer: [1/2]: "
+								);
+				String key = sc.readLine();
+				switch (key) {
+				case "1":
+					sc.readLine();
+					System.out.println("\tSaving system state...");
+					try {
+						FileOutputStream file = new FileOutputStream(new File( PROGRAM_PATH )); 
+						ObjectOutputStream out = new ObjectOutputStream(file);
+						
+						out.writeObject(manager);
+						out.close();
+						file.close();
+						System.out.println("\tSaved successfully");
+					}catch( IOException e ) {
+						System.out.println(e.getMessage());
+					}
+				break;
+				case "2":
+					System.out.print("\tARE YOU SURE? [y = Yes / <Any> = No]: ");
+					String confirm = sc.readLine();
+					if(confirm.equals("y")) {
+						println("\tGoodbye!");
+						sc.close();						
+					}
+					else { election = 0; }
+				break;
+				default:
+					System.out.println("Invalid choice");
+					election = 0;
+					break;
+				}
 			break;
 			default:
 				println("Invalid choice.");
