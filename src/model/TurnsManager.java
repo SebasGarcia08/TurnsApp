@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -74,6 +75,7 @@ public class TurnsManager implements Serializable{
 	 */
 	public static ArrayList<String> SURNAMES = new ArrayList<String>();
 	public static final float  CHANGE_TIME_DURATION = (float) 0.25;
+	public DateTime starting_datetime_turn = dateTime;
 
 	// ------------------------------------------------------------------------------------------------
 	// Constructors
@@ -202,7 +204,6 @@ public class TurnsManager implements Serializable{
 	 */
 	public void registerTurnType(String name, float duration) {
 		turnTypes.add(new TurnType(name, duration));
-		DateTime staringDateTime = this.dateTime;
 	}
 
 	/**
@@ -212,27 +213,83 @@ public class TurnsManager implements Serializable{
 	 * After setting turn to user, lasTurn was updated.
 	 * @throws UserNotFoundException if user with the specified id is not found.
 	 * @throws UserAlreadyHasATurnException, if user already has a turns assigned.
+	 * @throws BannedUserException, if user is within the days of suspension period
 	 */
-	public void registerTurn(String id, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException {
+	public void registerTurn(String id, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException, BannedUserException {
 		User usr = searchUser(id);
+		DateTime twoDaysLater = DateTime.copyOf(this.dateTime);
+		twoDaysLater.plusDays(2);
 		if(usr == null) 				throw new UserNotFoundException(id);
+		if( usr.getLastBannedDateTime() != null && !usr.getLastBannedDateTime().isAfter(twoDaysLater) )
+			throw new BannedUserException(id, usr.getLastBannedDateTime());
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
 			TurnType tt =  turnTypes.get(turnTypeIdx);
 			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, tt);
+			// If is the first turn, then set it to the current datetime; else, set it to the last turn added 
+			if( allTurnsWereAttended() || turns.size() == 0 )
+				starting_datetime_turn = DateTime.copyOf(dateTime);
+			else
+				starting_datetime_turn = DateTime.copyOf(turns.get(turns.size()-1).getEndingDateTime()); 
 			// Sets the dateTime limits of the turn
-			DateTime startingDateTime = DateTime.copyOf(this.dateTime);
+			DateTime startingDateTime = DateTime.copyOf(starting_datetime_turn);
 			turn.setStartingDateTime(startingDateTime);
 			DateTime endingDateTime = DateTime.copyOf(startingDateTime);
 			endingDateTime.plusMillis( DateTime.minutes2Millis( tt.getDurationMinutes() + CHANGE_TIME_DURATION ) );
 			turn.setEndingDateTime( endingDateTime ); 
 			usr.setTurn(turn);
 			turns.add(turn);
-			System.out.println(turn.toString());
+			System.out.println("Start: " + startingDateTime+ "  end: " + endingDateTime);
+			System.out.println(turn);
 			lastTurn.setId(turn.getId());
 		}
 	}
-
+	
+	public boolean allTurnsWereAttended() {
+		boolean ans = true;
+		for(int i = 0; i < turns.size() && ans; i++) {
+			if( turns.get(i).getState().equals(Turn.ON_HOLD) )
+				ans = false;
+		}
+		return ans;
+	}
+	
+	public void attendAllTurnsUpToTheCurrentDateTime() throws NoSuchElementException{
+		if( !users.isEmpty() ) {
+			for(User x : users) {
+				if(x.getTurn() != null && 
+				   x.getTurn().getState().equals(Turn.ON_HOLD) && 
+				   x.getTurn().getEndingDateTime().isBefore(this.dateTime)) {
+						String randomState = ( Math.random() > 0.5 ) ? Turn.ATTENDED : Turn.USER_NOT_PRESENT; 
+						dispatchTurn(x.getTurn(), randomState);
+						System.out.println( x.getId() +  ": Changed to " + randomState);
+				}
+			}
+		} else {
+			throw new NoSuchElementException("There are no turns registered yet");
+		}
+	}
+	
+	/**
+	 * Returns a string summarizing the pending turns to be attended.
+	 * @return String, table containing the information about the pending turns to be attended.
+	 */
+	public String sendTurnsQueue() {
+		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\tID\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
+		String res = header +"\n";
+		for( User u : users) {
+			if(u.getTurn() != null && u.getTurn().getState().equals(Turn.ON_HOLD)){
+				DateTime startingDateTime = DateTime.copyOf(u.getTurn().getStartingDateTime());
+				DateTime endingDateTime = DateTime.copyOf(startingDateTime);
+				endingDateTime.plusMillis(DateTime.minutes2Millis(u.getTurn().getTurnTpye().getDurationMinutes()));				
+				res += "\t\t"+u.getNames() + " " + u.getSurnames() +"\t\t"+u.getId()+"\t"+u.getTurn().getStartingDateTime()+"\t\t"+endingDateTime+"\n";
+			}
+		}
+		if(res == (header + "\n"))
+			res = "\tNo turns queued yet...";
+		return res;
+	}
+	
 	/**
 	 * @return the turnTypes
 	 */
@@ -277,7 +334,15 @@ public class TurnsManager implements Serializable{
 	public void dispatchTurn(Turn turn, String state) throws NoSuchElementException {
 		if(turn == null) throw new NoSuchElementException("Turn not found");
 		turn.setState(state);
-		searchUser(turn.getUser().getId()).setTurn(null);;
+		User usr = searchUser(turn.getUser().getId());
+		usr.setTurn(null);
+		if(state.equals(Turn.USER_NOT_PRESENT)) usr.numberOfAbsences++;
+		if(usr.numberOfAbsences == 2) {
+			DateTime bannedDateTime = DateTime.copyOf(this.dateTime);
+			bannedDateTime.plusDays(2);
+			usr.setLastBannedDateTime(bannedDateTime);
+			usr.numberOfAbsences = 0;
+		}
 	}
 	
 	/**
@@ -395,11 +460,9 @@ public class TurnsManager implements Serializable{
 		int[] date = Arrays.stream(dateAndTime[0].split("-")).mapToInt(Integer::parseInt).toArray();
 		// hh:mm:ss
 		int[] time = Arrays.stream(dateAndTime[1].split(":")).mapToInt(Integer::parseInt).toArray();
-		
 		DateTime dt = new DateTime(date[0], date[1], date[2], time[0], time[1], time[2]);
-
-		if( dt.isBefore(dt) )
-			throw new Exception("Invalid datetime");
+		if( dt.isBefore(this.dateTime) )
+			throw new Exception("Invalid datetime. New datetime cannot be older than current");
 		else
 			this.dateTime = dt;
 	}

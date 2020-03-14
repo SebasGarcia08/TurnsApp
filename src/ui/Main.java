@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
+
+import CustomExceptions.BannedUserException;
 import CustomExceptions.BlankRequiredFieldException;
 import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
@@ -116,14 +118,18 @@ public class Main {
 				.collect( Collectors.toCollection(ArrayList::new))
 		));
 		
-		//Load system state
-		
-		
 		int election = 0;
 		long start;
 		long end;
-		String OPCIONES = "\n\t1).Add user\n\t2). Add turn type\n\t3).Register turn\n\t4).Attend\n\t5).Update date\n\t6).Show time\n\t7).Exit";
-		int exit = 7;
+		int exit = 8;
+		String OPCIONES = "\n\t1).Add user " + 
+						  "\n\t2).Add turn type" +
+						  "\n\t3).Register turn"+
+						  "\n\t4).Attend all pending turns until current datetime"+
+						  "\n\t5).Update date"+
+						  "\n\t6).Show time"+
+						  "\n\t7).Summarize pending turns to be attended"+
+						  "\n\t"+ exit +").Exit";
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
 			try {
@@ -223,7 +229,7 @@ public class Main {
 						start = System.currentTimeMillis();
 						manager.registerTurn(id_, idxOfTurnType);						
 						println(SUCCESS_OP);
-					} catch (UserAlreadyHasATurnException | UserNotFoundException e) {
+					} catch (UserAlreadyHasATurnException | UserNotFoundException | BannedUserException e) {
 						println(e.getMessage());
 						println(FAILED_OP);
 					}
@@ -232,68 +238,23 @@ public class Main {
 			break;
 			case 4:
 				try {
-					println("\n[ATTEND TURN]");
-					println("\tCurrent turn is " +  manager.getCurrentTurn().getId());
-					println("\tChooose: ");
-					println("\t\t1). Attend current turn.");
-					println("\t\t2). Attend another turn");
-					println("\t\t3). Go back to menu");
-					print("\tAnswer [1-2]: ");
-					
-					int attentionMethodRes = Integer.parseInt(sc.readLine());
-					Turn turnToBeAttended = null;
-					
-					switch (attentionMethodRes) {
-					case 1:
-						turnToBeAttended = manager.getCurrentTurn();
-						break;
-					case 2:
-						manager.consultNextTurnToBeAttended().getId();
-						print("\t\t\tType the id of Turn that you want to attend: ");
-						String idSearched = sc.readLine();
-						turnToBeAttended = manager.searchTurn(idSearched);
-						break;
-					case 3:
-						break;
-					default:
-						println("Invalid choice");
-						break;
-					}
-					if(attentionMethodRes!=3) {
-					print("\t\t\tChoose the attention state:\n" + 
-						    "\t\t\t" + "\t1) Dispatch as: Attended\n"+ 
-						    "\t\t\t" + "\t2) Dispatch as: User not present\n"+
-						    "\t\t\t" + "\t3) Go back\n"+ 
-						    "\t\t\tAnswer[1-3]: ");
-					int res = Integer.parseInt(sc.readLine());
-						switch (res) {
-						case 1:
-							manager.dispatchTurn(turnToBeAttended, Turn.ATTENDED);
-							break;
-						case 2:
-							manager.dispatchTurn(turnToBeAttended, Turn.USER_NOT_PRESENT);
-							break;
-						case 3:
-							election=3;
-							break;
-						default:
-							println("Invalid choice");
-							break;
-						}
-						println(SUCCESS_OP);
-					}
-				} catch(NoSuchElementException | NumberFormatException e) {
+					// Before registering, update the datetime
+					manager.updateDateTimeByMillis(System.currentTimeMillis() - start);
+					start = System.currentTimeMillis();
+					manager.attendAllTurnsUpToTheCurrentDateTime();
+				} catch(NoSuchElementException e) {
 					println(e.getMessage());
 					println(FAILED_OP);
 				}
 			break;
 			case 5:
-				print("\tChoose: \n\t[1] Update datetime taking with computer system datetime.\n\t[2] Update datetime manually\n\t[Any] Go back\n\t[Answer]: ");
+				print("\tChoose: \n\t[1] Synchronize datetime with this computer.\n\t[2] Update datetime manually\n\t[Any] Go back\n\t[Answer]: ");
 				try {
 					String res = sc.readLine();
 					switch(res) {
 						case "1": 
 							manager.updateDateTimeBySystem();
+							start = System.currentTimeMillis();
 							break;
 						case "2":
 							print("\t\tWrite the datetime you will update the system (with format YYYY-MM-DD hh:mm:ss). E,g. 2025-12-31 23:59:55: ");
@@ -313,6 +274,9 @@ public class Main {
 				System.out.println("\tCURRENT SYSTEM TIME " + manager.sendDateTime());
 				break;
 			case 7:
+				 System.out.println(manager.sendTurnsQueue());
+				break;
+			case 8:
 				System.out.println("[EXIT]");
 				System.out.print("Choose:\n\t" + 
 										"[1] Save changes\n\t"+ 
@@ -322,7 +286,6 @@ public class Main {
 				String key = sc.readLine();
 				switch (key) {
 				case "1":
-					sc.readLine();
 					System.out.println("\tSaving system state...");
 					try {
 						FileOutputStream file = new FileOutputStream(new File( PROGRAM_PATH )); 

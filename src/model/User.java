@@ -34,7 +34,8 @@ public class User implements Serializable{
 	private String cellphoneNumber;
 	private String address;
 	private Turn turn;
-	private boolean suspended;
+	private DateTime lastBannedDateTime;
+	public int numberOfAbsences;
 
 	/**
 	 * Creates an User object.
@@ -53,19 +54,43 @@ public class User implements Serializable{
 		this.cellphoneNumber = cpn;
 		this.address = a;
 		this.turn = t;
-		this.suspended = false;
+		this.lastBannedDateTime = null;
 	}
 	
-	public void suspend() {
-		this.suspended = true;
-	}
-
 	/**
 	 * Returns the user's turn.
 	 * @return Turn, turn.
 	 */
 	public Turn getTurn() {
 		return turn;
+	}
+
+	/**
+	 * @return the names
+	 */
+	public String getNames() {
+		return names;
+	}
+
+	/**
+	 * @return the surnames
+	 */
+	public String getSurnames() {
+		return surnames;
+	}
+
+	/**
+	 * @param surnames the surnames to set
+	 */
+	public void setSurnames(String surnames) {
+		this.surnames = surnames;
+	}
+
+	/**
+	 * @param names the names to set
+	 */
+	public void setNames(String names) {
+		this.names = names;
 	}
 
 	/**
@@ -77,14 +102,6 @@ public class User implements Serializable{
 	}
 
 	/**
-	 * Returns the user name.
-	 * @return String, user name.
-	 */
-//	public String getName() {
-//		return this.name;
-//	}
-
-	/**
 	 * Returns the Id of user.
 	 * @return String, user id.
 	 */
@@ -92,6 +109,19 @@ public class User implements Serializable{
 		return this.id;
 	}
 
+	/**
+	 * @return DateTime, the bannedDateTime
+	 */
+	public DateTime getLastBannedDateTime() {
+		return lastBannedDateTime;
+	}
+
+	/**
+	 * @param DateTime, bannedDateTime the bannedDateTime to set
+	 */
+	public void setLastBannedDateTime(DateTime bannedDateTime) {
+		this.lastBannedDateTime = bannedDateTime;
+	}
 
 	/**
 	 * Returns the User string representation.
@@ -102,9 +132,4 @@ public class User implements Serializable{
 		return "User [name=" + names + ", id=" + id + ", typeOfDocument=" + typeOfDocument + ", cellphoneNumber="
 				+ cellphoneNumber + ", address=" + address + ", turn=" + ((turn == null) ? "null": turn.getId()) + "]";
 	}
-
-	public boolean equals(User obj) {
-		return (this.id.equalsIgnoreCase(obj.getId()));
-	}
-
 }

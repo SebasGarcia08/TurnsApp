@@ -183,7 +183,7 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 	public boolean isAfter(DateTime dt) {
 		return ( this.compareTo(dt) == 1 );		
 	}
-
+	
 	@Override
 	public int compareTo(DateTime o) {
 		int result;
