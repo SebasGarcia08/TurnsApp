@@ -45,6 +45,7 @@ public class TurnsManager implements Serializable{
 	private ArrayList<Turn> turns;
 	
 	private DateTime dateTime;
+	private ArrayList<TurnType> turnTypes;
 	
 	/**
 	 * Turn, this attribute is used to indicate what is the last turn assigned. Next turns assigned will be based on this.
@@ -87,6 +88,7 @@ public class TurnsManager implements Serializable{
 		this.turns = new ArrayList<Turn>();
 		this.users = new ArrayList<User>();
 		this.lastTurn = new Turn("A-1", null, null);
+		this.turnTypes = new ArrayList<TurnType>();
 	}
 
 	// ------------------------------------------------------------------------------------------------
@@ -192,6 +194,16 @@ public class TurnsManager implements Serializable{
 		}
 		return found;
 	}
+	
+	/**
+	 * Adds a new TurnType
+	 * @param name String, the name.
+	 * @param duration float, the duration.
+	 */
+	public void registerTurnType(String name, float duration) {
+		turnTypes.add(new TurnType(name, duration));
+		DateTime staringDateTime = this.dateTime;
+	}
 
 	/**
 	 * Registers next available turn to user with id specified.
@@ -201,16 +213,38 @@ public class TurnsManager implements Serializable{
 	 * @throws UserNotFoundException if user with the specified id is not found.
 	 * @throws UserAlreadyHasATurnException, if user already has a turns assigned.
 	 */
-	public void registerTurn(String id, String name, int duration) throws UserAlreadyHasATurnException, UserNotFoundException {
+	public void registerTurn(String id, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException {
 		User usr = searchUser(id);
 		if(usr == null) 				throw new UserNotFoundException(id);
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
-			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, new TurnType(name, duration));
+			TurnType tt =  turnTypes.get(turnTypeIdx);
+			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, tt);
+			// Sets the dateTime limits of the turn
+			DateTime startingDateTime = DateTime.copyOf(this.dateTime);
+			turn.setStartingDateTime(startingDateTime);
+			DateTime endingDateTime = DateTime.copyOf(startingDateTime);
+			endingDateTime.plusMillis( DateTime.minutes2Millis( tt.getDurationMinutes() + CHANGE_TIME_DURATION ) );
+			turn.setEndingDateTime( endingDateTime ); 
 			usr.setTurn(turn);
 			turns.add(turn);
+			System.out.println(turn.toString());
 			lastTurn.setId(turn.getId());
 		}
+	}
+
+	/**
+	 * @return the turnTypes
+	 */
+	public ArrayList<TurnType> getTurnTypes() {
+		return turnTypes;
+	}
+
+	/**
+	 * @param turnTypes the turnTypes to set
+	 */
+	public void setTurnTypes(ArrayList<TurnType> turnTypes) {
+		this.turnTypes = turnTypes;
 	}
 
 	public void setDateTime(DateTime dateTime) {
@@ -376,6 +410,11 @@ public class TurnsManager implements Serializable{
 	
 	public void updateDateTimeBySystem() {
 		this.dateTime = DateTime.now();
+	}
+	
+	public void addTurnType(String name, float duration) {
+		TurnType tt = new TurnType(name, duration + CHANGE_TIME_DURATION);
+		turnTypes.add(tt);
 	}
 	
 	// ------------------------------------------------------------------------------------------------

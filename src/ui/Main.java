@@ -22,6 +22,7 @@ import CustomExceptions.InvalidInputException;;
  *
  */
 public class Main {
+	
 	/**
 	 * Main method.
 	 * @param args, String[].
@@ -84,11 +85,14 @@ public class Main {
 				.collect( Collectors.toCollection(ArrayList::new))
 		));
 		
+		//Load system state
+		
+		
 		int election = 0;
 		long start;
 		long end;
-		String OPCIONES = "\n\t1).Add user\n\t2).Register turn\n\t3).Attend\n\t4).Update date\n\t5).Show time\n\t6).Exit";
-		int exit = 6;
+		String OPCIONES = "\n\t1).Add user\n\t2). Add turn type\n\t3).Register turn\n\t4).Attend\n\t5).Update date\n\t6).Show time\n\t7).Exit";
+		int exit = 7;
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
 			try {
@@ -138,6 +142,18 @@ public class Main {
 					}
 			break;
 			case 2:
+				try {
+					System.out.println("\n[TURN TYPE REGISTRATION]");
+					System.out.print("\tName: ");
+					String ttname = sc.readLine();
+					System.out.print("\tDuration (minutes): ");
+					float ttduration = Float.parseFloat(sc.readLine());
+					manager.registerTurnType(ttname, ttduration);
+				} catch(Exception e) {
+					System.out.println(e.getMessage());
+				}
+			break;
+			case 3:
 				println("\n[TURN REGISTRATION]");
 				print("\tThe next available turn is " + manager.generateNextTurnId(manager.lastTurn.getId())
 						+ ". Do you want to assign it to some user? [y/n]: ");
@@ -148,12 +164,32 @@ public class Main {
 				else if (y_n.equalsIgnoreCase("y")) {
 					print("\tWrite the id of the user: ");
 					String id_ = sc.readLine();
-					print("\tType the name of the turn type");
-					String ttname = sc.readLine();							
+					int idxOfTurnType = 0;
+					if(manager.getTurnTypes().isEmpty()) {
+						System.out.println("\tThere is no turn types available. Create one.");
+						break;
+					} else {
+						System.out.println("Select the turnType");
+						int count=1;
+						for(TurnType x : manager.getTurnTypes()) {
+							System.out.println("\t\t[" + count + "]" + " " + x.toString());
+							count++;
+						}
+						System.out.print("\tAnswer: ");
+						try {
+							idxOfTurnType = Integer.parseInt(sc.readLine()) - 1;
+							if( idxOfTurnType < 0 || idxOfTurnType > manager.getTurnTypes().size()) {
+								throw new NumberFormatException();
+							}
+						} catch(NumberFormatException e) {
+							System.out.println("Invalid input");
+						}
+					}
 					try {
-						print("\tType the duration of the turn: ");
-						int ttduration = Integer.parseInt(sc.readLine());
-						manager.registerTurn(id_, ttname, ttduration);
+						// Before registering, update the datetime
+						manager.updateDateTimeByMillis(System.currentTimeMillis() - start);
+						start = System.currentTimeMillis();
+						manager.registerTurn(id_, idxOfTurnType);						
 						println(SUCCESS_OP);
 					} catch (UserAlreadyHasATurnException | UserNotFoundException e) {
 						println(e.getMessage());
@@ -162,7 +198,7 @@ public class Main {
 				} else
 					println("Invalid choice. Possible answers are 'y' (yes) or 'n' (no)");
 			break;
-			case 3:
+			case 4:
 				try {
 					println("\n[ATTEND TURN]");
 					println("\tCurrent turn is " +  manager.getCurrentTurn().getId());
@@ -219,7 +255,7 @@ public class Main {
 					println(FAILED_OP);
 				}
 			break;
-			case 4:
+			case 5:
 				print("\tChoose: \n\t[1] Update datetime taking with computer system datetime.\n\t[2] Update datetime manually\n\t[Any] Go back\n\t[Answer]: ");
 				try {
 					String res = sc.readLine();
@@ -239,12 +275,12 @@ public class Main {
 					println(e.getMessage());
 				}
 				break;
-			case 5:
+			case 6:
 				manager.updateDateTimeByMillis(System.currentTimeMillis() - start);
 				start = System.currentTimeMillis();
 				System.out.println("\tCURRENT SYSTEM TIME " + manager.sendDateTime());
 				break;
-			case 6:
+			case 7:
 				println("Goodbye!");
 				sc.close();
 			break;

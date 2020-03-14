@@ -1,29 +1,51 @@
 package model;
 
-public class TurnType {
+import java.io.Serializable;
+
+public class TurnType implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
 	private String name;
 	private float durationMinutes;
-	private DateTime dt;
 	
 	public TurnType(String name, float duration) {
 		this.name = name;
 		this.durationMinutes = duration;
 	}
 
+	/**
+	 * @return the name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * @param name the name to set
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public float getDuration() {
+	/**
+	 * @return the durationMinutes
+	 */
+	public float getDurationMinutes() {
 		return durationMinutes;
 	}
 
-	public void setDuration(float duration) {
-		this.durationMinutes = duration;
+	/**
+	 * @param durationMinutes the durationMinutes to set
+	 */
+	public void setDurationMinutes(float durationMinutes) {
+		this.durationMinutes = durationMinutes;
 	}
-	
+
+	@Override
+	public String toString() {
+		return "name: " + name + ", durationMinutes: " + durationMinutes;
+	}	
 }

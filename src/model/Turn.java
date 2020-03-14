@@ -27,6 +27,8 @@ public class Turn implements Serializable {
 	private String id;
 	private User user;
 	private TurnType turnTpye;
+	private DateTime startingDateTime;
+	private DateTime endingDateTime;
 
 	// ------------------------------------------------------------------------------------------------
 	// Constructor
@@ -42,6 +44,36 @@ public class Turn implements Serializable {
 		this.user = usr;
 		this.turnTpye = tt;
 	}
+	
+
+	/**
+	 * @return the startingDateTime
+	 */
+	public DateTime getStartingDateTime() {
+		return startingDateTime;
+	}
+
+	/**
+	 * @param startingDateTime the startingDateTime to set
+	 */
+	public void setStartingDateTime(DateTime startingDateTime) {
+		this.startingDateTime = startingDateTime;
+	}
+
+	/**
+	 * @return the endingDateTime
+	 */
+	public DateTime getEndingDateTime() {
+		return endingDateTime;
+	}
+
+	/**
+	 * @param endingDateTime the endingDateTime to set
+	 */
+	public void setEndingDateTime(DateTime endingDateTime) {
+		this.endingDateTime = endingDateTime;
+	}
+
 
 	public TurnType getTurnTpye() {
 		return turnTpye;
@@ -85,9 +117,11 @@ public class Turn implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "Turn [state=" + state + ", id=" + id + "]";
+		return "Turn [state=" + state + ", id=" + id + ", user=" + user + ", turnTpye=" + turnTpye
+				+ ", startingDateTime=" + startingDateTime + ", endingDateTime=" + endingDateTime + "]";
 	}
-	
+
+
 	/**
 	 * Returns state
 	 * @return String, state.

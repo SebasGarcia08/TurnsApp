@@ -81,6 +81,10 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 		else { this.seconds = actualSecs; }
 	}
 	
+	public static DateTime copyOf( DateTime dt){
+		return new DateTime(dt.year, dt.month, dt.day, dt.hours, dt.minutes, dt.seconds);
+	}
+	
 	public void plusMinutes(int newMinutes) {
 		int actualMins = this.minutes + newMinutes;
 		if(actualMins >= 60) {
@@ -136,6 +140,10 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 	
 	public LocalDateTime toLocalDateTime() {
 		return LocalDateTime.of(year, month, day, hours, minutes, seconds);
+	}
+	
+	public static long minutes2Millis(float minutes) {
+		return (long) ((minutes * 60) * 1000);
 	}
 	
 	public int getYear() {
