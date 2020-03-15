@@ -329,7 +329,7 @@ public class TurnsManager implements Serializable{
 	 */
 	public void generateCSVReportForTurns(ArrayList<Turn> turns, List<String> titles, String filename) throws IOException {
 		String header = String.join(",", titles);
-		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename )));
+		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename +".csv" )));
 		bw.write(header + "\n");
 		turns.forEach(x -> {
 			try {
@@ -350,7 +350,7 @@ public class TurnsManager implements Serializable{
 	 */
 	public void generateCSVReportForUsers(ArrayList<User> turns, List<String> titles, String filename) throws IOException {
 		String header = String.join(",", titles);
-		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename )));
+		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename+".csv" )));
 		bw.write(header + "\n");
 		turns.forEach(x -> {
 			try {
