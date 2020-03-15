@@ -224,25 +224,24 @@ public class TurnsManager implements Serializable{
 	}
 
 	/**
-	 * Registers next available turn to user with id specified.
-	 * @param id, String, identification number of user to whom the turn will be assigned. Cannot be null.
+	 * Registers next available turn to user with id and turn type specified.
+	 * @param usrId, String, identification number of user to whom the turn will be assigned. Cannot be null.
 	 * <b>post: <b> turn was registered successfully if parameter was not null, user was found and didn't have a turn assigned already; otherwise, corresponding exception was thrown.
 	 * After setting turn to user, lasTurn was updated.
 	 * @throws UserNotFoundException if user with the specified id is not found.
 	 * @throws UserAlreadyHasATurnException, if user already has a turns assigned.
 	 * @throws BannedUserException, if user is within the days of suspension period
 	 */
-	public void registerTurn(String id, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException, BannedUserException {
-		User usr = searchUser(id);
-		DateTime twoDaysLater = DateTime.copyOf(this.dateTime);
-		twoDaysLater.plusDays(2);
-		if(usr == null) 				throw new UserNotFoundException(id);
-		if( usr.getLastBannedDateTime() != null && !usr.getLastBannedDateTime().isAfter(twoDaysLater) )
-			throw new BannedUserException(id, usr.getLastBannedDateTime());
+	public void registerTurn(String usrId, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException, BannedUserException {
+		User usr = searchUser(usrId);
+		if(usr == null) 				throw new UserNotFoundException(usrId);
+		if(turnTypes.isEmpty()) throw new NoSuchElementException("There are no turntypes added yet.");
+		if( usr.getLastBannedDateTime() != null && !usr.getLastBannedDateTime().isBefore(this.dateTime) )
+			throw new BannedUserException(usrId, usr.getLastBannedDateTime());		
+		
 		else if (usr.getTurn() != null) throw new UserAlreadyHasATurnException(usr);
 		else {
 			TurnType tt =  turnTypes.get(turnTypeIdx);
-			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, tt);
 			// If is the first turn, then set it to the current datetime; else, set it to the last turn added 
 			if( allTurnsWereAttended() || turns.size() == 0 )
 				starting_datetime_turn = DateTime.copyOf(dateTime);
@@ -250,14 +249,21 @@ public class TurnsManager implements Serializable{
 				starting_datetime_turn = DateTime.copyOf(turns.get(turns.size()-1).getEndingDateTime()); 
 			// Sets the dateTime limits of the turn
 			DateTime startingDateTime = DateTime.copyOf(starting_datetime_turn);
-			turn.setStartingDateTime(startingDateTime);
 			DateTime endingDateTime = DateTime.copyOf(startingDateTime);
 			endingDateTime.plusMillis( DateTime.minutes2Millis( tt.getDurationMinutes() + CHANGE_TIME_DURATION ) );
+			
+			// Reinitializes turns id's if it starts in the current day but ends after midnight (i.e. in the next day)
+			if(startingDateTime.isBefore(dateTime.asMidnight()) && endingDateTime.isAfter(dateTime.asMidnight()))
+				this.lastTurn = new Turn("A-1", null, null);
+			
+			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, tt);
+			turn.setStartingDateTime(startingDateTime);
 			turn.setEndingDateTime( endingDateTime ); 
 			usr.setTurn(turn);
 			turns.add(turn);
 			System.out.println("Start: " + startingDateTime+ "  end: " + endingDateTime);
 			System.out.println(turn);
+			System.out.println(usr);
 			lastTurn.setId(turn.getId());
 		}
 	}
@@ -292,7 +298,7 @@ public class TurnsManager implements Serializable{
 	 * @return String, table containing the information about the pending turns to be attended.
 	 */
 	public String sendTurnsQueue() {
-		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
+		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\t\t\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
 		String res = header +"\n";
 		for( User u : users) {
 			if(u.getTurn() != null && u.getTurn().getState().equals(Turn.ON_HOLD)){
@@ -305,6 +311,10 @@ public class TurnsManager implements Serializable{
 		if(res.equals(header + "\n"))
 			res = "\tNo turns queued yet...";
 		return res;
+	}
+	
+	public void sortByTurnId() {
+		
 	}
 	
 	/**
@@ -332,6 +342,7 @@ public class TurnsManager implements Serializable{
 	 * @return String, id of the next turn. Its first character is a letter and the rest are numbers.
 	 */
 	public static String generateNextTurnId(String currTurnId) {
+		// Reinitialize turns if day changes		
 		long numDigits = (long) Math.pow(10, EXPONENT_OF_POSSIBLE_NUMBER_OF_DIGITS);
 		char letter = currTurnId.charAt(0);
 		int number = Integer.parseInt(currTurnId.substring(1, currTurnId.length()));
@@ -434,7 +445,7 @@ public class TurnsManager implements Serializable{
 		
 		String name1 = NAMES.get(randomIdx1);
 		String name2 = NAMES.get(randomIdx2);
-		return name1 + name2; 
+		return name1 + " " + name2; 
 	}
 	
 	/**
@@ -456,19 +467,10 @@ public class TurnsManager implements Serializable{
 	 * Generates a random composed surname based on text files allocated in /data folder
 	 * @return String, composed random name.
 	 */
-	public String generateRandomComposedSurnames() throws IOException{
+	public String generateRandomSurname() throws IOException{
 		loadSurnames();
 		int randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
-		int randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
-		
-		while(randomIdx1 == randomIdx2) {
-			randomIdx1 = (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);
-			randomIdx2 =  (int) Math.floor( Math.random() * LENGTH_OF_NAMES_AND_SURNAMES_FILE);	
-		}
-		
-		String name1 = SURNAMES.get(randomIdx1);
-		String name2 = SURNAMES.get(randomIdx2);
-		return name1 + name2; 
+		return SURNAMES.get(randomIdx1);
 	} 
 	
 	/**
@@ -476,20 +478,80 @@ public class TurnsManager implements Serializable{
 	 * @param numUsers int, number of users to generate.
 	 * @throws IOException
 	 */
-	public void generateRandomUsers(int numUsers) throws IOException {
-		for(int i=0; i < numUsers; i++) {
+	public int generateRandomUsers(int numUsers) throws IOException {
+		int numberOfSuccesfullyRegisteredUsers = 0;
+		while(numberOfSuccesfullyRegisteredUsers < numUsers) {
 			  String id = String.valueOf( (int) (Math.random() * NUMBER_OF_POSSIBLE_IDS));
 			  String name = generateComposedRandomName();
-			  String surnames = generateRandomComposedSurnames();
+			  String surnames = generateRandomSurname();
 			  int idxOfTod = (int) (Math.random() * User.TYPES_OF_DOCUMENTS.length);
 			  String tod = User.TYPES_OF_DOCUMENTS[idxOfTod];
 			  try {
 				addUser(name, surnames, id, tod, "", "", null);
+				numberOfSuccesfullyRegisteredUsers++;
 			} catch (UserAlreadyRegisteredException | InvalidInputException | BlankRequiredFieldException e) {
 				continue;
 			}
 		}
-		System.out.println(users.size());
+		return users.size();
+	}
+	
+	/**
+	 * This method simulates the registration of specified number of turns in a given period of time.
+	 * @param numDays, int. The number of days in which turns are going to be randomly generated.
+	 * @param numTurnsPerDay, int. The number of turns per day.
+	 * @throws TurnsLimitExceededException if: 
+	 */
+	public void registerTurnsPerDay(int numDays, int numTurnsPerDay) throws TurnsLimitExceededException {
+		int numberOfPossible = calculateNumberOfUsersAvailable();
+		if( (numDays * numTurnsPerDay) <= numberOfPossible) {
+			int daysLeft = numDays;
+			while(daysLeft > 0) {
+				registerTurns(numTurnsPerDay);
+				starting_datetime_turn.plusDays(1);
+				daysLeft--;
+			} 
+		}else {
+			throw new TurnsLimitExceededException(numberOfPossible);
+		}
+	}
+	
+	public void registerTurns(int numTurns) throws NoSuchElementException {
+		int numTurnsRegisteredSuccesfully = 0;
+		int i = 0;
+		while( numTurnsRegisteredSuccesfully < numTurns ) {
+			int randomIdxTurnType = (int) Math.random() * turnTypes.size(); 
+			try {
+				registerTurn(users.get(i).getId(), randomIdxTurnType);
+				numTurnsRegisteredSuccesfully++;
+			} catch (UserNotFoundException | UserAlreadyHasATurnException | BannedUserException  e) {
+				continue;
+			}finally {
+				i++;
+			}
+		}
+	}
+	
+	/**
+	 * Filters the users that are able to take a turn. 
+	 * @return ArrayList<User>, number of users that, according to the rules of the program, are able to register a turn
+	 */
+	public ArrayList<User> getUsersAvailable(){
+		return users.stream().filter(u -> 
+			u.getTurn() == null && (u.getLastBannedDateTime() == null || u.getLastBannedDateTime().isBefore(dateTime) )
+		).collect(Collectors.toCollection(ArrayList::new));
+	}
+	
+	/**
+	 * Claculates the number of users that are able to take a turn. 
+	 * @return int, number of users that, according to the rules of the program, are able to register a turn.
+	 */
+	public int calculateNumberOfUsersAvailable() {
+		int x = 0;
+		for(User u : users)
+			if(u.getTurn() == null && ( u.getLastBannedDateTime() == null || u.getLastBannedDateTime().isBefore(dateTime) ) )
+				x++;				
+		return x;
 	}
 	
 	/**

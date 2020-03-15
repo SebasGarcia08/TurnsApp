@@ -1,5 +1,4 @@
 package CustomExceptions;
-import model.TurnsManager;
 
 public class TurnsLimitExceededException extends Exception {
 	/**
@@ -7,7 +6,7 @@ public class TurnsLimitExceededException extends Exception {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	TurnsLimitExceededException(){
-		super("Turns limit exceeded. There are only " + TurnsManager.NUMBER_OF_POSSIBLE_IDS + " possible turns per day");
+	public TurnsLimitExceededException(long numberOfPossible){
+		super("Number of turns exceeded. There are only " + numberOfPossible + " possible valid turns per day. Create more users.");
 	}
 }

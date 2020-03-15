@@ -70,6 +70,14 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 		this.seconds = seconds;
 	}
 	
+	public String stringDate() {
+		return hours + ":" + minutes + ":" + seconds;
+	}
+	
+	public String stringTime() {
+		return year + "-" +  month + "-" + day;
+	}
+	
 	public void plusMillis(long millis) {
 		int newSecs = (int) (millis / 1000);
 		int actualSecs = this.seconds + newSecs;
@@ -140,6 +148,18 @@ public class DateTime implements Serializable, Comparable<DateTime>{
 	
 	public LocalDateTime toLocalDateTime() {
 		return LocalDateTime.of(year, month, day, hours, minutes, seconds);
+	}
+	
+	public DateTime asMidnight() {
+		return new DateTime(year, month, day, 23, 59, 59);
+	}
+	
+	public boolean isBetween(DateTime d1, DateTime d2) {
+		return ( this.isAfter(d1) && this.isBefore(d2) );
+	}
+	
+	public DateTime fiveMinutesBeforeMidNight() {
+		return new DateTime(this.year, this.month, this.day, 23, 55, 00);
 	}
 	
 	public static long minutes2Millis(float minutes) {

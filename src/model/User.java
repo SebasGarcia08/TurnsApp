@@ -22,6 +22,7 @@ public class User implements Serializable{
 	public static final String IC = "Identity card";
 	public static final String CR = "Civil register";
 	public static final String[] TYPES_OF_DOCUMENTS = {CC, FI, PA, IC, CR};
+	public static int numberOfUsersSuspended = 0;
 	
 	// ------------------------------------------------------------------------------------------------
 	// Attributes

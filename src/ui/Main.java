@@ -20,6 +20,7 @@ import CustomExceptions.UserAlreadyHasATurnException;
 import CustomExceptions.UserAlreadyRegisteredException;
 import CustomExceptions.UserNotFoundException;
 import CustomExceptions.InvalidInputException;
+import CustomExceptions.TurnsLimitExceededException;
 import model.*;
 
 /**
@@ -121,7 +122,7 @@ public class Main {
 		int election = 0;
 		long start;
 		long end;
-		int exit = 9;
+		int exit = 10;
 		String OPCIONES = "\n\t1).Add user " + 
 						  "\n\t2).Add turn type" +
 						  "\n\t3).Register turn"+
@@ -130,6 +131,7 @@ public class Main {
 						  "\n\t6).Show time"+
 						  "\n\t7).Summarize pending turns to be attended"+
 						  "\n\t8).Generate random users" +
+						  "\n\t9).Generate random turns by days" +
 						  "\n\t"+ exit +").Exit";
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
@@ -193,13 +195,6 @@ public class Main {
 			break;
 			case 3:
 				println("\n[TURN REGISTRATION]");
-				print("\tThe next available turn is " + manager.generateNextTurnId(manager.lastTurn.getId())
-						+ ". Do you want to assign it to some user? [y/n]: ");
-				String y_n = "";
-				try { y_n = String.valueOf(sc.readLine().charAt(0)); }
-				catch(StringIndexOutOfBoundsException e) { println("Invalid choice"); break; }
-				if (y_n.equalsIgnoreCase("n")) { println("Ok, returning to menu..."); } 
-				else if (y_n.equalsIgnoreCase("y")) {
 					print("\tWrite the id of the user: ");
 					String id_ = sc.readLine();
 					int idxOfTurnType = 0;
@@ -234,8 +229,6 @@ public class Main {
 						println(e.getMessage());
 						println(FAILED_OP);
 					}
-				} else
-					println("Invalid choice. Possible answers are 'y' (yes) or 'n' (no)");
 			break;
 			case 4:
 				try {
@@ -279,12 +272,26 @@ public class Main {
 				break;
 			case 8:
 				try {
-					manager.generateRandomUsers(Integer.parseInt(sc.readLine()));
+					System.out.print("Type the number of users to be generated: ");	
+					System.out.println("Now there are " + manager.generateRandomUsers(Integer.parseInt(sc.readLine())) + " users." );
 				}catch(NumberFormatException e) {
 					break;
 				}
 				break;
 			case 9:
+				System.out.print("Type the number of days: ");
+				int numDays = Integer.parseInt(sc.readLine());
+				System.out.print("Type the number of turns per days: ");
+				int numTurnsPerDay = Integer.parseInt(sc.readLine());
+				try {
+					manager.registerTurnsPerDay(numDays, numTurnsPerDay);
+				} catch (TurnsLimitExceededException | NoSuchElementException e) {
+					System.out.println(e.getMessage());
+				}catch( NumberFormatException e ) {
+					break;
+				}
+			break;
+			case 10:
 				System.out.println("[EXIT]");
 				System.out.print("Choose:\n\t" + 
 										"[1] Save changes\n\t"+ 
