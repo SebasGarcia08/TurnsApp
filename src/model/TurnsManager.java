@@ -496,7 +496,6 @@ public class TurnsManager implements Serializable{
 				   x.getTurn().getEndingDateTime().isBefore(this.dateTime)) {
 						String randomState = ( Math.random() > 0.5 ) ? Turn.ATTENDED : Turn.USER_NOT_PRESENT; 
 						dispatchTurn(x.getTurn(), randomState);
-						System.out.println( x.getId() +  ": Changed to " + randomState);
 				}
 			}
 		} else {
@@ -509,7 +508,7 @@ public class TurnsManager implements Serializable{
 	 * @return String, table containing the information about the pending turns to be attended.
 	 */
 	public String sendTurnsQueue() {
-		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tUSER ID\t\tCOMPLETE NAMES\t\t\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME(+15 secs)";
+		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tUSER ID\t\tCOMPLETE NAMES\t\t\tID\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME(+15 secs)";
 		String res = header +"\n";
 		for( User u : users) {
 			if(u.getTurn() != null && u.getTurn().getState().equals(Turn.ON_HOLD)){
