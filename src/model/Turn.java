@@ -117,8 +117,7 @@ public class Turn implements Serializable {
 	
 	@Override
 	public String toString() {
-		return "Turn [state=" + state + ", id=" + id + ", user=" + user + ", turnTpye=" + turnTpye
-				+ ", startingDateTime=" + startingDateTime + ", endingDateTime=" + endingDateTime + "]";
+		return id + "," + state;
 	}
 
 

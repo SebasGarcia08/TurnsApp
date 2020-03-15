@@ -1,14 +1,17 @@
 package model;
 
+import java.util.List;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -71,6 +74,7 @@ public class TurnsManager implements Serializable{
 	public static final int LENGTH_OF_NAMES_AND_SURNAMES_FILE = 999;
 	public static final String NAMES_FILE_PATH = "data/names.txt";
 	public static final String SURNAMES_FILE_PATH = "data/surnames.txt";
+	public static final String REPORTS_FOLDER = "reports/";
 	
 	/**
 	 * This ArrayList will be filled once and only once with the names inside NAMES_FILE_PATH
@@ -134,7 +138,7 @@ public class TurnsManager implements Serializable{
 		// ------------------------------------------------------------------------------------------------
 		// Validate that user is not already registered
 		// ------------------------------------------------------------------------------------------------		
-		if (searchUser(id) != null)	throw new UserAlreadyRegisteredException(id);
+		if (binarySearchUserById(id) != null)	throw new UserAlreadyRegisteredException(id);
 
 		// ------------------------------------------------------------------------------------------------
 		// Validate that required fields are not blank
@@ -197,7 +201,171 @@ public class TurnsManager implements Serializable{
 	}
 	
 	/**
-	 * Searches a Turn by its id. 
+	 * Searches by the code of a user using binary search
+	 * @return User found, can be null if not found; otherwise, the object searched.
+	 */
+	public User binarySearchUserById( String id ) {
+		// SORTING USSING ANONYMOUS CLASS AND REVERSE ORDER
+		Collections.sort( users, Collections.reverseOrder(new Comparator<User>() {
+					@Override
+					public int compare(User o1, User o2) {
+						return  o1.getId().compareTo(o2.getId());
+					}
+			}));
+			
+			int start = 0;
+			int end = users.size() - 1;
+			boolean wasFound = false; 
+			User found = null;
+			while( start <= end && !wasFound) {
+				int mid = (start + end) / 2;
+				if( users.get(mid).getId().compareTo(id) < 0)
+					end = mid -1;
+				else if( users.get(mid).getId().compareTo(id) > 0)
+					start = mid+1;
+				else {
+					wasFound = true;
+					found = users.get(mid); 
+				} 	
+			}
+	        
+	        return found; 
+	    }
+	
+	/**
+	 * Sorts users by name and surnames using BubbleSort
+	 */
+	public ArrayList<User> getSortedUsersByNameAndSurname(ArrayList<User> users) {
+		Comparator<User> comp = new UserNameAndSurnameComparator();
+		int n = users.size();
+        for (int i = 0; i < n-1; i++)
+            for (int j = 0; j < n-i-1; j++)
+                if ( comp.compare(users.get(j), users.get(j+1)) > 0)
+                {
+                    // swap temp and arr[i]
+                    User temp = users.get(j);
+                    users.set(j, users.get(j+1));
+                    users.set(j+1, temp);
+                }
+        return users;
+	}
+	
+	/**
+	 * Sorts users in descending order by their number of absences using Insertion sort 
+	 */
+	public ArrayList<User> getSortedUsersByNumberOfAbsences(ArrayList<User> users) {	  
+        int n = users.size(); 
+        for (int i = 1; i < n; ++i) { 
+            User key = users.get(i); 
+            int j = i - 1; 
+            
+            while (j >= 0 && users.get(j).numberOfAbsences < key.numberOfAbsences) { 
+                users.set(j + 1, users.get(j));
+                j = j - 1; 
+            }
+            
+            users.set(j+1, key); 
+        }
+        return users;
+	}
+	
+	/**
+	 * Sort turns by their ending datetime in ascending order (from earliest to oldest) using Selection Sort
+	 */
+	public ArrayList<Turn> getSortedTurnsByEndingDateTime(ArrayList<Turn> turns ) {
+		int n = turns.size(); 
+        for (int i = 0; i < n-1; i++) { 
+            // Find the minimum element in unsorted array 
+            int min_idx = i; 
+            for (int j = i+1; j < n; j++) 
+                if ( turns.get(j).getEndingDateTime().isBefore( turns.get(min_idx).getEndingDateTime() )) 
+                    min_idx = j; 
+ 
+            Turn temp = turns.get(min_idx); 
+            turns.set(min_idx, turns.get(i));
+            turns.set(i, temp);
+        }
+        return turns;
+	}
+	
+	/**
+	 * Filters by all the turns whose user is the specified in parameters
+	 * @param userId, String, the id of the user.
+	 * @return ArrayList<Turn>, all turns requested by user.
+	 */
+	public ArrayList<Turn> getAllTurnsRequestedByUser( String userId ) throws UserNotFoundException {
+		if( binarySearchUserById(userId) == null ) throw new UserNotFoundException(userId);
+		ArrayList<Turn> filteredTurns =  turns.stream()
+					.filter(x -> x.getUser().getId().equals(userId))
+					.collect(Collectors.toCollection(ArrayList::new));
+		if( filteredTurns.isEmpty() )
+			throw new NoSuchElementException("User with id "+ userId + " has no requested turns.");
+		return filteredTurns;
+	}
+
+	/**
+	 * Filters by all the turns whose user is the specified in parameters
+	 * @param userId, String, the id of the user.
+	 * @return ArrayList<Turn>, all turns requested by user.
+	 */
+	public ArrayList<User> getAllUserThatHadTurn(String turnId) throws NoSuchElementException{
+		if( binarySearchTurnById(turnId) == null ) throw new NoSuchElementException( "There are no turn with id " + turnId);
+		ArrayList<User> filtereduUsers = new ArrayList<User>();
+		for(Turn t : turns) {
+			if(t.getId().equals(turnId))
+				filtereduUsers.add(t.getUser());
+		}
+		if(filtereduUsers.isEmpty())
+			throw new NoSuchElementException("There are no users that requested turn " + turnId);
+		return filtereduUsers;
+	}
+	
+	/**
+	 * Generates a csv report of users with specified headers
+	 * @param turns, ArrayLsit, the turns
+	 * @param titles, List<String> headers
+	 * @param filename, String
+	 * @throws IOException if an error occurred during creating file
+	 */
+	public void generateCSVReportForTurns(ArrayList<Turn> turns, List<String> titles, String filename) throws IOException {
+		String header = String.join(",", titles);
+		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename )));
+		bw.write(header + "\n");
+		turns.forEach(x -> {
+			try {
+				bw.write( x + "\n");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		bw.close();
+	}
+	
+	/**
+	 * Generates a csv report of turns with specified headers
+	 * @param turns, ArrayLsit, the turns
+	 * @param titles, List<String> headers
+	 * @param filename, String
+	 * @throws IOException if an error occurred during creating file
+	 */
+	public void generateCSVReportForUsers(ArrayList<User> turns, List<String> titles, String filename) throws IOException {
+		String header = String.join(",", titles);
+		BufferedWriter  bw = new BufferedWriter(new FileWriter(new File( REPORTS_FOLDER + filename )));
+		bw.write(header + "\n");
+		turns.forEach(x -> {
+			try {
+				bw.write( x + "\n");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		});
+		bw.close();
+	}
+	
+	
+		
+	/**
+	 * Sequentially searches Turn by its id. 
 	 * @param id, String, identification code of turn to be searched.
 	 * @return Turn object if found; otherwise, null.
 	 */
@@ -213,6 +381,39 @@ public class TurnsManager implements Serializable{
 		}
 		return found;
 	}
+	
+	/**
+	 * Searches by the id of a Turn using binary search
+	 * @return Turn found, can be null if not found; otherwise, the object searched.
+	 */
+	public Turn binarySearchTurnById( String id ) {
+		// Anonymous class
+		// SORTING USSING ANONYMOUS CLASS AND REVERSE ORDER
+		Collections.sort( turns, Collections.reverseOrder(new Comparator<Turn>() {
+					@Override
+					public int compare(Turn o1, Turn o2) {
+						return  o1.getId().compareTo(o2.getId());
+					}
+			}));
+			
+			int start = 0;
+			int end = turns.size() - 1;
+			boolean wasFound = false; 
+			Turn found = null;
+			while( start <= end && !wasFound) {
+				int mid = (start + end) / 2;
+				if( turns.get(mid).getId().compareTo(id) < 0)
+					end = mid -1;
+				else if( turns.get(mid).getId().compareTo(id) > 0)
+					start = mid+1;
+				else {
+					wasFound = true;
+					found = turns.get(mid); 
+				} 	
+			}
+			
+	        return found; 
+	   }
 	
 	/**
 	 * Adds a new TurnType
@@ -233,7 +434,7 @@ public class TurnsManager implements Serializable{
 	 * @throws BannedUserException, if user is within the days of suspension period
 	 */
 	public void registerTurn(String usrId, int turnTypeIdx) throws UserAlreadyHasATurnException, UserNotFoundException, BannedUserException {
-		User usr = searchUser(usrId);
+		User usr = binarySearchUserById(usrId);
 		if(usr == null) 				throw new UserNotFoundException(usrId);
 		if(turnTypes.isEmpty()) throw new NoSuchElementException("There are no turntypes added yet.");
 		if( usr.getLastBannedDateTime() != null && !usr.getLastBannedDateTime().isBefore(this.dateTime) )
@@ -253,21 +454,27 @@ public class TurnsManager implements Serializable{
 			endingDateTime.plusMillis( DateTime.minutes2Millis( tt.getDurationMinutes() + CHANGE_TIME_DURATION ) );
 			
 			// Reinitializes turns id's if it starts in the current day but ends after midnight (i.e. in the next day)
-			if(startingDateTime.isBefore(dateTime.asMidnight()) && endingDateTime.isAfter(dateTime.asMidnight()))
+			if(startingDateTime.isBefore(dateTime.asMidnight()) && endingDateTime.isAfter(dateTime.asMidnight())) {
 				this.lastTurn = new Turn("A-1", null, null);
+				startingDateTime = dateTime.asMidnight();
+				startingDateTime.plusHours(1);
+				endingDateTime = DateTime.copyOf(startingDateTime);
+				endingDateTime.plusMillis( DateTime.minutes2Millis( tt.getDurationMinutes() + CHANGE_TIME_DURATION ) );
+			}
 			
 			Turn turn = new Turn(generateNextTurnId(lastTurn.getId()), usr, tt);
 			turn.setStartingDateTime(startingDateTime);
 			turn.setEndingDateTime( endingDateTime ); 
 			usr.setTurn(turn);
 			turns.add(turn);
-			System.out.println("Start: " + startingDateTime+ "  end: " + endingDateTime);
-			System.out.println(turn);
-			System.out.println(usr);
 			lastTurn.setId(turn.getId());
 		}
 	}
 	
+	/**
+	 * Answers whether all turns were already attended.
+	 * @return boolean, answer if all turns were attended.
+	 */
 	public boolean allTurnsWereAttended() {
 		boolean ans = true;
 		for(int i = 0; i < turns.size() && ans; i++) {
@@ -277,6 +484,10 @@ public class TurnsManager implements Serializable{
 		return ans;
 	}
 	
+	/**
+	 * Attends all turns pending until the current datetime, randomly assigning the state of every turn. 
+	 * @throws NoSuchElementException
+	 */
 	public void attendAllTurnsUpToTheCurrentDateTime() throws NoSuchElementException{
 		if( !users.isEmpty() ) {
 			for(User x : users) {
@@ -298,41 +509,26 @@ public class TurnsManager implements Serializable{
 	 * @return String, table containing the information about the pending turns to be attended.
 	 */
 	public String sendTurnsQueue() {
-		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tCOMPLETE NAMES\t\t\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME";
+		String header = "\t\t\t\t   QUEUED TURNS \n\n\t\tUSER ID\t\tCOMPLETE NAMES\t\t\tID\t\tTURN'S BEGENNING DATETIME\tTURN'S ENDING DATETIME(+15 secs)";
 		String res = header +"\n";
 		for( User u : users) {
 			if(u.getTurn() != null && u.getTurn().getState().equals(Turn.ON_HOLD)){
 				DateTime startingDateTime = DateTime.copyOf(u.getTurn().getStartingDateTime());
 				DateTime endingDateTime = DateTime.copyOf(startingDateTime);
 				endingDateTime.plusMillis(DateTime.minutes2Millis(u.getTurn().getTurnTpye().getDurationMinutes()));				
-				res += "\t\t"+u.getNames() + " " + u.getSurnames() +"\t\t"+u.getTurn().getId()+"\t"+u.getTurn().getStartingDateTime()+"\t\t"+endingDateTime+"\n";
+				res += "\t\t" + u.getId()+ "\t\t"+u.getNames() + " " + u.getSurnames() +"\t\t"+u.getTurn().getId()+"\t"+u.getTurn().getStartingDateTime()+"\t\t"+u.getTurn().getEndingDateTime()+"\n";
 			}
 		}
 		if(res.equals(header + "\n"))
 			res = "\tNo turns queued yet...";
 		return res;
 	}
-	
-	public void sortByTurnId() {
 		
-	}
-	
 	/**
 	 * @return the turnTypes
 	 */
 	public ArrayList<TurnType> getTurnTypes() {
 		return turnTypes;
-	}
-
-	/**
-	 * @param turnTypes the turnTypes to set
-	 */
-	public void setTurnTypes(ArrayList<TurnType> turnTypes) {
-		this.turnTypes = turnTypes;
-	}
-
-	public void setDateTime(DateTime dateTime) {
-		this.dateTime = dateTime;
 	}
 
 	/**
@@ -368,11 +564,10 @@ public class TurnsManager implements Serializable{
 		User usr = searchUser(turn.getUser().getId());
 		usr.setTurn(null);
 		if(state.equals(Turn.USER_NOT_PRESENT)) usr.numberOfAbsences++;
-		if(usr.numberOfAbsences == 2) {
+		if(usr.numberOfAbsences % 2 == 0) {
 			DateTime bannedDateTime = DateTime.copyOf(this.dateTime);
 			bannedDateTime.plusDays(2);
 			usr.setLastBannedDateTime(bannedDateTime);
-			usr.numberOfAbsences = 0;
 		}
 	}
 	
@@ -508,7 +703,8 @@ public class TurnsManager implements Serializable{
 			int daysLeft = numDays;
 			while(daysLeft > 0) {
 				registerTurns(numTurnsPerDay);
-				starting_datetime_turn.plusDays(1);
+				turns.get(turns.size()-1).getEndingDateTime().plusDays(1);
+				reInitializeTurnsIds();
 				daysLeft--;
 			} 
 		}else {
@@ -516,11 +712,23 @@ public class TurnsManager implements Serializable{
 		}
 	}
 	
+	/**
+	 * Re-intiializes turn ids
+	 */
+	public void reInitializeTurnsIds() {
+		this.lastTurn = new Turn("A-1", null, null);
+	}
+	
+	/**
+	 * Registers randomly the number of turns specified in parameters within the current datetime.
+	 * @param numTurns, int, the number of turns to be generated randomly.. 
+	 * @throws NoSuchElementException if there are no turntypes added yet.
+	 */
 	public void registerTurns(int numTurns) throws NoSuchElementException {
 		int numTurnsRegisteredSuccesfully = 0;
 		int i = 0;
 		while( numTurnsRegisteredSuccesfully < numTurns ) {
-			int randomIdxTurnType = (int) Math.random() * turnTypes.size(); 
+			int randomIdxTurnType = (int) (Math.random() * (turnTypes.size() - 1)); 
 			try {
 				registerTurn(users.get(i).getId(), randomIdxTurnType);
 				numTurnsRegisteredSuccesfully++;
@@ -584,15 +792,19 @@ public class TurnsManager implements Serializable{
 		br.close();
 	}
 	
+	/**
+	 * Send string with datetime
+	 * @return String, datetime. 
+	 */
 	public String sendDateTime() {
 		return dateTime.toString();
 	}
 	
-	//TODO- Documentation
-	public DateTime getDateTime() {
-		return this.dateTime;
-	}
-	
+	/**
+	 * Modifies the current datetime of the system based on the user's selection.
+	 * @param strDate, String, the string containing the date. Must follow this pattern: YYYY-MM-DD hh:mm:ss
+	 * @throws Exception if the new dateTime is older than the current one.
+	 */
 	public void updateDateTimeManually(String strDate) throws Exception {
 		strDate = strDate.trim();
 		String[] dateAndTime = strDate.split(" ");
@@ -607,14 +819,26 @@ public class TurnsManager implements Serializable{
 			this.dateTime = dt;
 	}
 	
+	/**
+	 * Updates milliseconds to the current datetime
+	 * @param milliseconds
+	 */
 	public void updateDateTimeByMillis(long milliseconds) {
 		dateTime.plusMillis(milliseconds);
 	}
 	
+	/**
+	 * Synchronizes the sysemt's datetime with the computer's datetime.
+	 */
 	public void updateDateTimeBySystem() {
 		this.dateTime = DateTime.now();
 	}
 	
+	/**
+	 * Adds a turn type.
+	 * @param name, String, the name of the turnType.
+	 * @param duration, float, the minutes of duration of the turn type.
+	 */
 	public void addTurnType(String name, float duration) {
 		TurnType tt = new TurnType(name, duration + CHANGE_TIME_DURATION);
 		turnTypes.add(tt);

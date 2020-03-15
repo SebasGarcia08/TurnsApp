@@ -11,6 +11,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -122,7 +123,7 @@ public class Main {
 		int election = 0;
 		long start;
 		long end;
-		int exit = 10;
+		int exit = 11;
 		String OPCIONES = "\n\t1).Add user " + 
 						  "\n\t2).Add turn type" +
 						  "\n\t3).Register turn"+
@@ -130,8 +131,9 @@ public class Main {
 						  "\n\t5).Update date"+
 						  "\n\t6).Show time"+
 						  "\n\t7).Summarize pending turns to be attended"+
-						  "\n\t8).Generate random users" +
+						  "\n\t8). Generate random users" +
 						  "\n\t9).Generate random turns by days" +
+						  "\n\t10). Reports"+
 						  "\n\t"+ exit +").Exit";
 		while (election != exit && (start = System.currentTimeMillis()) > 0 ) {
 			print("\n======== MENU ========" + OPCIONES + "\nAnswer [1-4]: ");
@@ -279,19 +281,94 @@ public class Main {
 				}
 				break;
 			case 9:
-				System.out.print("Type the number of days: ");
-				int numDays = Integer.parseInt(sc.readLine());
-				System.out.print("Type the number of turns per days: ");
-				int numTurnsPerDay = Integer.parseInt(sc.readLine());
 				try {
+					System.out.print("\t\tType the number of days: ");
+					int numDays = Integer.parseInt(sc.readLine());
+					System.out.print("\t\tType the number of turns per days: ");
+					int numTurnsPerDay = Integer.parseInt(sc.readLine());
 					manager.registerTurnsPerDay(numDays, numTurnsPerDay);
+					System.out.println(SUCCESS_OP);
 				} catch (TurnsLimitExceededException | NoSuchElementException e) {
 					System.out.println(e.getMessage());
+					System.out.println(FAILED_OP);
 				}catch( NumberFormatException e ) {
 					break;
 				}
 			break;
 			case 10:
+				System.out.println("\tDo you want to visualize the report in console or export it as a CSV file in /reports folder?");
+				System.out.print("\t\tAnswer [C: Console / E: Export as CSV / <Any>: Return to menu]: ");
+				String visMode = sc.readLine().toUpperCase();
+				if( !visMode.equals("C") && !visMode.equals("E")) break;
+				System.out.print("\tGenerate report about:" + 
+								 "\n\t\t1). All turns requested by user"+
+								 "\n\t\t2). All users that requested some turn"+
+								 "\n\t\t<Any> Go back to menu"+
+								 "\n\tAnswer [1/2]: "
+								);
+				String kindOfReport = sc.readLine();
+				String resSorting = "";
+				String userId = "";
+				String turnId = "";
+				switch (kindOfReport) {
+				case "1":
+					System.out.print("\t\t Type the id of the user: ");
+					userId = sc.readLine();
+					System.out.print("\t\t\tSort by: \n\t\t\tD).Turn ending datetime\n\t\t\tZ). Without criteria\n\t\tAnswer: ");
+					resSorting = sc.readLine().toUpperCase();
+					break;
+				case "2":
+					System.out.print("\t\t Type the id of turn: ");
+					turnId = sc.readLine();
+					System.out.print("\t\t\tSort by: \n\t\t\tA). Number of absences\n\t\t\tN). Name and surnames\n\t\t\tZ). Without criteria\n\t\tAnswer: ");
+					resSorting = sc.readLine().toUpperCase();
+					break;
+				default:
+					break;
+				} 
+				boolean firstValidCase = (kindOfReport.equals("1") && (resSorting.equals("D") || resSorting.equals("Z")));
+				boolean secondValidCase = (kindOfReport.equals("2") && ( resSorting.equals("A") || resSorting.equals("N") || resSorting.equals("Z") ));
+				if( firstValidCase ) {
+					try {
+						List<String> titles = Arrays.asList("TURN_ID","TURN_STATE");
+						ArrayList<Turn> turns = manager.getAllTurnsRequestedByUser(userId);
+						if(resSorting.equals("D"))
+							turns = manager.getSortedTurnsByEndingDateTime(turns);
+						if( visMode.equals("C") ) {
+								System.out.println( String.join("\t", titles) );
+								turns.forEach( x -> System.out.println(x.getId() + "\t" + x.getState()));							
+						}else {
+							System.out.print("Type the report name: ");
+							String filename = sc.readLine();
+							manager.generateCSVReportForTurns(turns, titles, filename);
+						}
+					} catch(NoSuchElementException e) {
+						System.out.println(e.getMessage());
+						System.out.println(FAILED_OP);
+					}
+				} else if ( secondValidCase ) {
+					try {
+						List<String> titles = Arrays.asList("NAMES","SURNAMES","NUMBER_OF_ABSENCES");
+						ArrayList<User>  users = manager.getAllUserThatHadTurn(turnId);
+						if( resSorting.equals("A") )
+							users = manager.getSortedUsersByNumberOfAbsences(users);
+						if(resSorting.equals("N"))
+							users = manager.getSortedUsersByNameAndSurname(users);
+						if( visMode.equals("C") ) {
+							System.out.println( String.join("\t", titles) );
+							users.forEach( x -> System.out.println(x.getId() + "\t" + x.getNames() + "\t" + x.getSurnames() + "\t" + x.numberOfAbsences));
+						}else {
+							System.out.print("Type the report name: ");
+							String filename = sc.readLine();
+							manager.generateCSVReportForUsers(users, titles, filename);
+						}
+					}catch(NoSuchElementException e) {
+						System.out.println(e.getMessage());
+						System.out.println(FAILED_OP);
+					}
+				}
+				break;
+			case 11:
 				System.out.println("[EXIT]");
 				System.out.print("Choose:\n\t" + 
 										"[1] Save changes\n\t"+ 
