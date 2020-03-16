@@ -1,6 +1,6 @@
 # TurnsApp 2.0 
 
-![Class diagram of proposed solution](Class Diagram1.jpg) 
+![Class diagram of proposed solution](ClassDiagram1.jpg) 
 
 ## Context
 A company has hired him to develop a program in his customer service department that solves the problem of control and attention of people who come to their service centers to be served.
